@@ -1,8 +1,8 @@
 # NET_09_CO-TUONG
 # Networking Programming
 
-♟️ Trò Chơi Cờ Tướng Online
-Đồ Án Lập Trình Mạng — Lớp 012012301305
+♟️️ Trò Chơi Cờ Tướng Online
+Đồ Án Lập Trình Mạng — Lớp 012012301303
 Trường Đại học Giao Thông Vận Tải TP. Hồ Chí Minh
 
 📌 Giới Thiệu Đề Tài
@@ -34,12 +34,15 @@ co-tuong-online/
 🛠️ Công Nghệ Sử Dụng
 (Cập nhật sau khi thống nhất công nghệ)
 
-Thành phần -	Công nghệ dự kiến
-Ngôn ngữ	
-Giao thức mạng	
-Giao diện	
-Giao tiếp	
+| Thành phần | Công nghệ dự kiến |
+| :--- | :--- |
+| Ngôn ngữ | |
+| Giao thức mạng | |
+| Giao diện | |
+| Giao tiếp | |
 
 📋 Phân Công Nhiệm Vụ
-Thành viên	Nhiệm vụ	Tiến độ
-...	...	...
+
+| Thành viên | Nhiệm vụ | Tiến độ |
+| :--- | :--- | :--- |
+| ... | ... | ... |
