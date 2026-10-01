@@ -3,7 +3,7 @@
 
 ♟️️ Trò Chơi Cờ Tướng Online
 
-Đồ Án Lập Trình Mạng — Lớp 012012301305
+Đồ Án Lập Trình Mạng — Lớp 012012301303
 
 Trường Đại học Giao Thông Vận Tải TP. Hồ Chí Minh
 
