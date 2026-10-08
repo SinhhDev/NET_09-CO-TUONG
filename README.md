@@ -1,5 +1,4 @@
 # NET_09_CO-TUONG
-# Networking Programming
 
 # ♟️️ Trò Chơi Cờ Tướng Online
 
@@ -7,13 +6,43 @@
 
 Trường Đại học Giao Thông Vận Tải TP. Hồ Chí Minh
 
-# 📌 Giới Thiệu Đề Tài
+---
+
+## 👥 Thông Tin Nhóm
+
+| STT | Họ và Tên      | MSSV | Vai trò |
+| --- | -------------- | ---- | ------- |
+| 1   | Ngô Quốc An    |      |         |
+| 2   | Trần Thế Hiển  |      |         |
+| 3   | Võ Duy Hưng    |      |         |
+| 4   | Đỗ Chí Kiên    |      |         |
+| 5   | Lê Trọng Nghĩa |      |         |
+| 6   | Trần Nhật Sinh |      |         |
+
+---
+
+## 📌 Giới Thiệu Đề Tài
 
 Cờ Tướng (Tượng Kỳ) là trò chơi trí tuệ có nguồn gốc từ Trung Quốc, phổ biến rộng rãi tại Việt Nam và các nước châu Á. Trò chơi được chơi bởi hai người trên bàn cờ 9 cột × 10 hàng, mỗi bên có 16 quân với các vai trò khác nhau.
 
-# 🗂️ Cấu Trúc Repository
+---
 
-```text
+## 🎮 Tính Năng Chính
+
+| Tính năng                        | Mô tả                                |
+| -------------------------------- | ------------------------------------ |
+| Kết nối mạng P2P / Client-Server | Hai người chơi kết nối qua TCP/UDP   |
+| Giao diện đồ họa                 | Hiển thị bàn cờ và quân cờ trực quan |
+| Kiểm tra nước đi hợp lệ          | Luật di chuyển của từng loại quân    |
+| Phát hiện chiếu tướng / chiếu bí | Xác định điều kiện thắng/thua        |
+| Chat trong game                  | Nhắn tin giữa hai người chơi         |
+| Đồng hồ thi đấu                  | Giới hạn thời gian mỗi lượt          |
+
+---
+
+## 🗂️ Cấu Trúc Repository
+
+```
 co-tuong-online/
 ├── src/                        # Toàn bộ mã nguồn
 │   ├── server/                 # Code phía Server
@@ -29,4 +58,23 @@ co-tuong-online/
 │   └── Phan_cong.xlsx
 ├── assets/                     # Hình ảnh quân cờ, bàn cờ
 │   └── images/
+├── .gitignore
 └── README.md
+```
+
+---
+
+## 📋 Phân Công Nhiệm Vụ
+
+| Thành viên     | Nhiệm vụ | Tiến độ |
+| -------------- | -------- | ------- |
+| Ngô Quốc An    | ...      | ...     |
+| Trần Thế Hiển  | ...      | ...     |
+| Võ Duy Hưng    | ...      | ...     |
+| Đỗ Chí Kiên    | ...      | ...     |
+| Lê Trọng Nghĩa | ...      | ...     |
+| Trần Nhật Sinh | ...      | ...     |
+
+---
+
+_Network Programming Course Project — Ho Chi Minh City University of Transport_
