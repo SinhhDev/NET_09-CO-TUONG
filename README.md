@@ -2,7 +2,7 @@
 
 # ♟️️ Trò Chơi Cờ Tướng Online
 
-Đồ Án: Lập Trình Mạng — Lớp: [012012301303]
+Đồ Án Lập Trình Mạng — Lớp: [012012301303]
 
 Trường Đại học Giao Thông Vận Tải TP. Hồ Chí Minh
 
@@ -10,14 +10,14 @@ Trường Đại học Giao Thông Vận Tải TP. Hồ Chí Minh
 
 ## 👥 Thông Tin Nhóm
 
-| STT | Họ và Tên      | MSSV | Vai trò |
-| --- | -------------- | ---- | ------- |
-| 1   | Ngô Quốc An    |      |         |
-| 2   | Trần Thế Hiển  |      |         |
-| 3   | Võ Duy Hưng    |      |         |
-| 4   | Đỗ Chí Kiên    |      |         |
-| 5   | Lê Trọng Nghĩa |      |         |
-| 6   | Trần Nhật Sinh |      |         |
+| STT | Họ và Tên      | MSSV | 
+| --- | -------------- | ---- | 
+| 1   | Ngô Quốc An    |      |         
+| 2   | Trần Thế Hiển  |      |         
+| 3   | Võ Duy Hưng    |      |         
+| 4   | Đỗ Chí Kiên    |      |         
+| 5   | Lê Trọng Nghĩa |      |         
+| 6   | Trần Nhật Sinh |      |        
 
 ---
 
@@ -54,27 +54,14 @@ co-tuong-online/
 ├── docs/                       # Tài liệu
 │   ├── Bao_cao.docx            # Báo cáo Word
 │   └── Thuyet_trinh.pptx       # PowerPoint thuyết trình
-├── reports/                    # Bảng phân công nhiệm vụ
-│   └── Phan_cong.xlsx
-├── assets/                     # Hình ảnh quân cờ, bàn cờ
-│   └── images/
+├── reports/                    
+│   └── Phan_cong.xlsx          # Bảng phân công nhiệm vụ
+├── assets/                     
+│   └── images/                 # Hình ảnh quân cờ, bàn cờ
 ├── .gitignore
 └── README.md
 ```
 
 ---
 
-## 📋 Phân Công Nhiệm Vụ
-
-| Thành viên     | Nhiệm vụ | Tiến độ |
-| -------------- | -------- | ------- |
-| Ngô Quốc An    | ...      | ...     |
-| Trần Thế Hiển  | ...      | ...     |
-| Võ Duy Hưng    | ...      | ...     |
-| Đỗ Chí Kiên    | ...      | ...     |
-| Lê Trọng Nghĩa | ...      | ...     |
-| Trần Nhật Sinh | ...      | ...     |
-
----
-
-_Network Programming Course Project — Ho Chi Minh City University of Transport_
+_Network Programming Project — Ho Chi Minh City University of Transport_
