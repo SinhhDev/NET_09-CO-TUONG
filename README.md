@@ -2,9 +2,9 @@
 
 # ♟️️ Trò Chơi Cờ Tướng Online
 
-Đồ Án Lập Trình Mạng — Lớp: [012012301303]
+**Đồ Án Lập Trình Mạng** — Lớp: [012012301303]
 
-Trường Đại học Giao Thông Vận Tải TP. Hồ Chí Minh
+*Trường Đại học Giao Thông Vận Tải TP. Hồ Chí Minh*
 
 ---
 
@@ -23,7 +23,9 @@ Trường Đại học Giao Thông Vận Tải TP. Hồ Chí Minh
 
 ## 📌 Giới Thiệu Đề Tài
 
-Cờ Tướng (Tượng Kỳ) là trò chơi trí tuệ có nguồn gốc từ Trung Quốc, phổ biến rộng rãi tại Việt Nam và các nước châu Á. Trò chơi được chơi bởi hai người trên bàn cờ 9 cột × 10 hàng, mỗi bên có 16 quân với các vai trò khác nhau.
+**Cờ Tướng** (Tượng Kỳ) là trò chơi trí tuệ có nguồn gốc từ Trung Quốc, phổ biến rộng rãi tại Việt Nam và các nước châu Á. Trò chơi được chơi bởi hai người trên bàn cờ 9 cột × 10 hàng, mỗi bên có 16 quân với các vai trò khác nhau.
+
+Dự án xây dựng ứng dụng chơi Cờ Tướng qua mạng theo mô hình **Client-Server** sử dụng giao thức **TCP thuần** với giao thức tự định nghĩa.
 
 ---
 

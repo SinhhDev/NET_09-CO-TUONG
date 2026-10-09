@@ -1,0 +1,21 @@
+# File tạm thời của Microsoft Office (Word, Excel, PowerPoint)
+~$*
+*.tmp
+
+# Thư mục cấu hình editor cá nhân (tùy chọn)
+.vscode/
+.idea/
+
+# File rác hệ thống điều hành
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Chặn các file người dùng cá nhân
+*.user
+*.suo
+*.pdb
+
+# Chặn các thư mục biên dịch (Build outputs)
+[Bb]in/
+[Oo]bj/
