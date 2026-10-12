@@ -1,21 +1,17 @@
-# File tạm thời của Microsoft Office (Word, Excel, PowerPoint)
-~$*
-*.tmp
+# Chặn thư mục cấu hình của Visual Studio
+.vs/
 
-# Thư mục cấu hình editor cá nhân (tùy chọn)
-.vscode/
-.idea/
-
-# File rác hệ thống điều hành
-Thumbs.db
-Desktop.ini
-.DS_Store
+# Chặn các thư mục biên dịch (Build outputs)
+[Bb]in/
+[Oo]bj/
 
 # Chặn các file người dùng cá nhân
 *.user
 *.suo
 *.pdb
 
-# Chặn các thư mục biên dịch (Build outputs)
-[Bb]in/
-[Oo]bj/
+# Chặn file Log tự sinh (nếu có)
+*.log
+
+# Log tự sinh khi chạy server
+src/server/server_log.txt
