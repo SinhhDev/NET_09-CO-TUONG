@@ -1,17 +1,24 @@
-# Chặn thư mục cấu hình của Visual Studio
+# 1. Thư mục cấu hình IDE
 .vs/
+.vscode/
 
-# Chặn các thư mục biên dịch (Build outputs)
+# 2. Thư mục và file tạm khi Build C#
 [Bb]in/
 [Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+*.nuget.*
+project.assets.json
+project.nuget.cache
 
-# Chặn các file người dùng cá nhân
+# 3. File cá nhân
 *.user
 *.suo
 *.pdb
 
-# Chặn file Log tự sinh (nếu có)
+# 4. File Log của Server
 *.log
+**/server_log.txt
 
-# Log tự sinh khi chạy server
-src/server/server_log.txt
+# 5. File tạm khi đang mở Word, Excel, PowerPoint
+~$*
