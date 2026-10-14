@@ -1,6 +1,6 @@
 # NET_09_CO-TUONG
 
-# ♟️️ Trò Chơi Cờ Tướng Online
+# ♟️️ Trò Chơi Cờ Tướng Trực Tuyến
 
 **Đồ Án Lập Trình Mạng** — Lớp: [012012301303]
 
@@ -12,12 +12,12 @@
 
 | STT | Họ và Tên      | MSSV | 
 | --- | -------------- | ---- | 
-| 1   | Ngô Quốc An    |      |         
-| 2   | Trần Thế Hiển  |      |         
-| 3   | Võ Duy Hưng    |      |         
-| 4   | Đỗ Chí Kiên    |      |         
-| 5   | Lê Trọng Nghĩa |      |         
-| 6   | Trần Nhật Sinh |      |        
+| 1   | Ngô Quốc An    |   082206003598   |         
+| 2   | Trần Thế Hiển  |   091207016773   |         
+| 3   | Võ Duy Hưng    |   075206008335   |         
+| 4   | Đỗ Chí Kiên    |   052206007333   |         
+| 5   | Lê Trọng Nghĩa |   079207027585   |         
+| 6   | Trần Nhật Sinh |   045206007877   |        
 
 ---
 

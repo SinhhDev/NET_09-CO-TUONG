@@ -26,10 +26,13 @@ namespace ChessServer
                 TcpClient incomingClient = _listener.AcceptTcpClient();
 
                 // Có người vào thì ghi log lại IP của họ
-                Logger.WriteLog($"[+] Khách mới kết nối từ: {incomingClient.Client.RemoteEndPoint}");
 
                 // Tạo một "nhân viên phục vụ" (ClientHandler) cho khách này
                 ClientHandler handler = new ClientHandler(incomingClient);
+                Task.Run(() => handler.Process());
+
+                // Ghép cặp vào phòng chơi
+                RoomManager.Instance.HandleNewClient(incomingClient);
 
                 // Đa luồng (Multi-threading)
                 // Ném ông khách này sang một luồng (Task) khác để nhân viên phục vụ, 
