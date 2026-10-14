@@ -73,17 +73,27 @@ namespace CoTuongOnline.Client
         /// Gửi dữ liệu thô tới server.
         /// (Protocol framing nếu cần thì phía game logic sẽ tự đóng gói.)
         /// </summary>
-        public async Task SendAsync(byte[] payload, CancellationToken ct = default)
-        {
-            if (payload == null) throw new ArgumentNullException(nameof(payload));
-            ThrowIfDisposed();
-            if (_stream == null)
-                throw new InvalidOperationException("Not connected. Call ConnectAsync first.");
+      public async Task SendAsync(byte[] payload, CancellationToken ct = default)
+{
+    if (payload == null) throw new ArgumentNullException(nameof(payload));
+    ThrowIfDisposed();
+    if (_stream == null)
+        throw new InvalidOperationException("Not connected. Call ConnectAsync first.");
 
-            ct.ThrowIfCancellationRequested();
-            await _stream.WriteAsync(payload, ct).ConfigureAwait(false);
-        }
+    await _sendLock.WaitAsync(ct).ConfigureAwait(false);
+    try
+    {
+        ThrowIfDisposed();
+        if (_stream == null)
+            throw new InvalidOperationException("Not connected. Call ConnectAsync first.");
 
+        await _stream.WriteAsync(payload, ct).ConfigureAwait(false);
+    }
+    finally
+    {
+        _sendLock.Release();
+    }
+}
         private async Task ReceiveLoopAsync(CancellationToken ct)
         {
             if (_stream == null) return;
