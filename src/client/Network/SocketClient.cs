@@ -18,6 +18,8 @@ namespace CoTuongOnline.Client
         private NetworkStreamWrapper? _stream;
         private CancellationTokenSource? _receiveCts;
         private readonly object _gate = new object();
+        private readonly SemaphoreSlim _sendLock = new SemaphoreSlim(1, 1);
+        private bool _disposed;
         private bool _disposed;
 
         /// <summary>
