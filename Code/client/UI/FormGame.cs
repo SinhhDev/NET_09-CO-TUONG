@@ -5,8 +5,6 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using CoTuongOnline.Common;
-using CoTuongOnline.Logic;
-using CoTuongOnline.Final;
 using CoTuongOnline.Network;
 
 namespace CoTuongOnline.Client
@@ -48,7 +46,6 @@ namespace CoTuongOnline.Client
 
         public FormGame()
         {
-            InitializeComponent();
             this.ClientSize = new Size(StartX * 2 + 8 * Cell + 200, StartY * 2 + 9 * Cell);
             this.Text = "Cờ Tướng Online";
             this.DoubleBuffered = true;
@@ -168,7 +165,7 @@ namespace CoTuongOnline.Client
                 return;
             }
 
-            bool moved = FinalLogic.TryMove(_board, fromRow, fromCol, row, col, _isRedTurn);
+            bool moved = MoveValidator.TryMove(_board, fromRow, fromCol, row, col, _isRedTurn);
             if (moved)
             {
                 if (clickedPiece != null)
@@ -209,7 +206,7 @@ namespace CoTuongOnline.Client
 
             for (int r = 0; r < 10; r++)
                 for (int c = 0; c < 9; c++)
-                    if (FinalLogic.TryMove(CloneBoard(_board), row, col, r, c, piece.IsRed))
+                    if (MoveValidator.TryMove(CloneBoard(_board), row, col, r, c, piece.IsRed))
                         moves.Add(new Point(c, r));
 
             return moves;
@@ -251,8 +248,21 @@ namespace CoTuongOnline.Client
 
         private void LoadImages()
         {
-            string basePath = Path.GetFullPath(Path.Combine(
-                AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "..", "assets", "images"));
+            string currentDir = AppDomain.CurrentDomain.BaseDirectory;
+            string? foundDir = null;
+            for (int i = 0; i < 7; i++)
+            {
+                string testPath = Path.Combine(currentDir, "Extra", "images");
+                if (Directory.Exists(testPath))
+                {
+                    foundDir = testPath;
+                    break;
+                }
+                var parent = Directory.GetParent(currentDir);
+                if (parent == null) break;
+                currentDir = parent.FullName;
+            }
+            string basePath = foundDir ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Extra", "images");
 
             var files = new Dictionary<string, string>
             {
@@ -524,7 +534,7 @@ namespace CoTuongOnline.Client
         {
             Piece? captured = _board.grid[toRow, toCol];
 
-            bool moved = FinalLogic.TryMove(_board, fromRow, fromCol, toRow, toCol, !_isPlayerRed);
+            bool moved = MoveValidator.TryMove(_board, fromRow, fromCol, toRow, toCol, !_isPlayerRed);
             if (!moved) return;
 
             if (captured != null)
@@ -572,6 +582,19 @@ namespace CoTuongOnline.Client
             dialog.AcceptButton = btnOk;
 
             return dialog.ShowDialog() == DialogResult.OK ? textBox.Text.Trim() : null;
+        }
+    }
+
+    public static class SoundManager
+    {
+        public static void PlayMove()
+        {
+            try { System.Media.SystemSounds.Beep.Play(); } catch { }
+        }
+
+        public static void PlayCapture()
+        {
+            try { System.Media.SystemSounds.Exclamation.Play(); } catch { }
         }
     }
 }
