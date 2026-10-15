@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -28,7 +28,7 @@ namespace CoTuongOnline.Client
 
             btnStart.Click += (s, e) =>
             {
-                Form1 game = new Form1();
+                FormGame game = new FormGame(); // Đã sửa Form1 thành FormGame
                 game.Show();
                 this.Hide();
             };
