@@ -1,131 +1,130 @@
-
 using System;
 using System.Collections.Generic;
-using System.Buffers.Binary;
 using System.Text;
 using CoTuongOnline.Network;
 
 namespace CoTuongOnline.Client
 {
     /// <summary>
-    /// Packet đã được tách hoàn chỉnh từ luồng TCP.
+    /// Bộ giải mã gói tin từ Server.
+    /// Xử lý vấn đề TCP framing: gom các chunk rời rạc thành packet hoàn chỉnh
+    /// dựa trên PacketHeader (5 byte: Type + Length).
     /// </summary>
-    public sealed class ParsedPacket
+    public class PacketParser
     {
-        public PacketType Type { get; }
-        public string Data { get; }
-
-        public ParsedPacket(PacketType type, string data)
-        {
-            Type = type;
-            Data = data;
-        }
-    }
-
-    /// <summary>
-    /// Đọc packet theo Protocol.cs của Quốc An:
-    /// Header = 1 byte Type + 4 byte Length.
-    /// Payload = chuỗi UTF-8 có độ dài Length byte.
-    /// </summary>
-    public sealed class PacketParser
-    {
-        private const int HeaderSize = 5;
-        private const int MaxPayloadSize = 1024 * 1024; // 1 MB
-
+        private const int HEADER_SIZE = 5;
         private readonly List<byte> _buffer = new List<byte>();
-        private readonly object _lock = new object();
-
-        public event Action<ParsedPacket>? PacketReceived;
-        public event Action<string>? ParseError;
 
         /// <summary>
-        /// Đưa dữ liệu vừa nhận từ SocketClient vào parser.
-        /// Không giả định mỗi lần gọi tương ứng một packet.
+        /// Event được gọi mỗi khi parse xong 1 packet hoàn chỉnh.
         /// </summary>
-        public void Feed(byte[] chunk)
+        public event Action<PacketType, string>? OnPacketParsed;
+
+        /// <summary>
+        /// Nhận chunk dữ liệu thô từ SocketClient và tách thành các packet.
+        /// Một chunk có thể chứa nhiều packet hoặc chỉ một phần packet.
+        /// </summary>
+        public void ReceiveData(byte[] chunk)
         {
-            if (chunk == null)
-                throw new ArgumentNullException(nameof(chunk));
+            if (chunk == null || chunk.Length == 0) return;
 
-            lock (_lock)
+            _buffer.AddRange(chunk);
+            ProcessBuffer();
+        }
+
+        /// <summary>
+        /// Xử lý buffer: đọc liên tục các packet cho đến khi không đủ dữ liệu.
+        /// </summary>
+        private void ProcessBuffer()
+        {
+            while (_buffer.Count >= HEADER_SIZE)
             {
-                _buffer.AddRange(chunk);
+                // Đọc header để biết độ dài payload
+                byte[] headerBytes = _buffer.GetRange(0, HEADER_SIZE).ToArray();
+                PacketType type = (PacketType)headerBytes[0];
+                int length = BitConverter.ToInt32(headerBytes, 1);
 
-                while (_buffer.Count >= HeaderSize)
+                // Kiểm tra độ dài hợp lệ
+                if (length < 0 || length > 65536)
                 {
-                    byte typeValue = _buffer[0];
-
-                    // Protocol.cs dùng Marshal ghi int vào header.
-                    // Little-endian tương ứng môi trường Windows/.NET thông thường.
-                    int length = BinaryPrimitives.ReadInt32LittleEndian(
-                        new byte[]
-                        {
-                            _buffer[1],
-                            _buffer[2],
-                            _buffer[3],
-                            _buffer[4]
-                        });
-
-                    if (length < 0 || length > MaxPayloadSize)
-                    {
-                        _buffer.Clear();
-                        ParseError?.Invoke(
-                            $"Độ dài packet không hợp lệ: {length}");
-                        return;
-                    }
-
-                    int packetSize = HeaderSize + length;
-
-                    // Chưa nhận đủ payload, đợi lần Feed tiếp theo.
-                    if (_buffer.Count < packetSize)
-                        return;
-
-                    byte[] payload = new byte[length];
-
-                    if (length > 0)
-                    {
-                        _buffer.CopyTo(
-                            HeaderSize, payload, 0, length);
-                    }
-
-                    _buffer.RemoveRange(0, packetSize);
-
-                    if (!Enum.IsDefined(typeof(PacketType), typeValue))
-                    {
-                        ParseError?.Invoke(
-                            $"PacketType không hợp lệ: {typeValue}");
-                        continue;
-                    }
-
-                    var packet = new ParsedPacket(
-                        (PacketType)typeValue,
-                        Encoding.UTF8.GetString(payload));
-
-                    // Phát sự kiện ngay theo thứ tự packet được tách.
-                    // Handler không nên chặn lâu trong callback này.
-                    try
-                    {
-                        PacketReceived?.Invoke(packet);
-                    }
-                    catch (Exception ex)
-                    {
-                        ParseError?.Invoke(
-                            $"Lỗi xử lý packet: {ex.Message}");
-                    }
+                    // Packet lỗi, xóa 1 byte và thử lại
+                    _buffer.RemoveAt(0);
+                    continue;
                 }
+
+                int totalSize = HEADER_SIZE + length;
+
+                // Chưa đủ dữ liệu cho packet này → chờ chunk tiếp
+                if (_buffer.Count < totalSize)
+                    break;
+
+                // Đọc payload
+                string data = length > 0
+                    ? Encoding.UTF8.GetString(_buffer.GetRange(HEADER_SIZE, length).ToArray())
+                    : string.Empty;
+
+                // Xóa packet đã xử lý khỏi buffer
+                _buffer.RemoveRange(0, totalSize);
+
+                // Fire event
+                OnPacketParsed?.Invoke(type, data);
             }
         }
 
         /// <summary>
-        /// Xóa dữ liệu còn tồn đọng, ví dụ khi bắt đầu trận mới
-        /// hoặc kết nối lại.
+        /// Parse dữ liệu nước đi từ chuỗi "x1,y1,x2,y2".
+        /// Trả về (fromRow, fromCol, toRow, toCol) hoặc null nếu lỗi.
+        /// </summary>
+        public static (int fromRow, int fromCol, int toRow, int toCol)? ParseMove(string data)
+        {
+            if (string.IsNullOrEmpty(data)) return null;
+
+            string[] parts = data.Split(',');
+            if (parts.Length != 4) return null;
+
+            if (int.TryParse(parts[0], out int x1) &&
+                int.TryParse(parts[1], out int y1) &&
+                int.TryParse(parts[2], out int x2) &&
+                int.TryParse(parts[3], out int y2))
+            {
+                return (x1, y1, x2, y2);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Parse dữ liệu GameStart: "RED" hoặc "BLACK".
+        /// </summary>
+        public static bool ParseGameStart(string data, out bool isRed)
+        {
+            // Server gửi "START|RED" hoặc "START|BLACK"
+            isRed = false;
+            if (string.IsNullOrEmpty(data)) return false;
+
+            string color = data.Contains("|") ? data.Split('|')[1] : data;
+            color = color.Trim().ToUpper();
+
+            if (color == "RED")
+            {
+                isRed = true;
+                return true;
+            }
+            else if (color == "BLACK")
+            {
+                isRed = false;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Xóa buffer (dùng khi disconnect/reconnect).
         /// </summary>
         public void Reset()
         {
-            lock (_lock)
-            {
-                _buffer.Clear();
-            }
+            _buffer.Clear();
         }
     }
 }

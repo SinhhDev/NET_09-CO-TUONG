@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -10,6 +10,7 @@ namespace CoTuongOnline.Client
 
         public FormResult(bool isWin)
         {
+
             this.Text = "Kết thúc";
             this.Size = new Size(300, 200);
             this.StartPosition = FormStartPosition.CenterScreen;
@@ -40,6 +41,7 @@ namespace CoTuongOnline.Client
                 Application.Exit();
             };
 
+            // 👇 QUAN TRỌNG
             this.Controls.Add(lbl);
             this.Controls.Add(btnReplay);
             this.Controls.Add(btnExit);

@@ -1,18 +1,6 @@
-using System;
-using System.Windows.Forms;
+﻿using System.Windows.Forms;
+using CoTuongOnline.Client;
 
-namespace CoTuongOnline.Client
-{
-    static class Program
-    {
-        [STAThread]
-        static void Main()
-        {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            
-            // Chạy FormMenu đầu tiên khi mở ứng dụng
-            Application.Run(new FormMenu()); 
-        }
-    }
-}
+Application.EnableVisualStyles();
+Application.SetCompatibleTextRenderingDefault(false);
+Application.Run(new FormMenu());

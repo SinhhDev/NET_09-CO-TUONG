@@ -18,8 +18,6 @@ namespace CoTuongOnline.Client
         private NetworkStreamWrapper? _stream;
         private CancellationTokenSource? _receiveCts;
         private readonly object _gate = new object();
-        private readonly SemaphoreSlim _sendLock = new SemaphoreSlim(1, 1);
-        private bool _disposed;
         private bool _disposed;
 
         /// <summary>
@@ -28,6 +26,8 @@ namespace CoTuongOnline.Client
         /// không đảm bảo ranh giới theo message nếu chưa có framing/protocol.
         /// </summary>
         public event Action<byte[]>? DataReceived;
+        public event Action<Exception>? ConnectionError;
+
 
         /// <summary>
         /// Kết nối tới server.
@@ -44,10 +44,16 @@ namespace CoTuongOnline.Client
             ct.ThrowIfCancellationRequested();
 
             // TcpClient.ConnectAsync(string,int) không có overload cancellation token ở một số phiên bản.
-            // Kết nối TCP tới server. Overload có CancellationToken (.NET 5+) hủy kết nối thật sự khi ct bị hủy,
-            // khác với cách cũ WhenAny + Task.Delay chỉ bỏ chờ còn kết nối vẫn chạy ngầm.
-            await _tcpClient.ConnectAsync(serverIp, serverPort, ct).ConfigureAwait(false);
-            _tcpClient.NoDelay = true; // giảm trễ cho game
+            // Ta dùng WhenAny + Task.Delay để hủy kết nối theo ct.
+            var connectTask = _tcpClient.ConnectAsync(serverIp, serverPort);
+            if (ct != default)
+            {
+                var completed = await Task.WhenAny(connectTask, Task.Delay(Timeout.Infinite, ct)).ConfigureAwait(false);
+                if (!ReferenceEquals(completed, connectTask))
+                    throw new OperationCanceledException(ct);
+            }
+
+            await connectTask.ConfigureAwait(false);
             _stream = new NetworkStreamWrapper(_tcpClient.GetStream());
         }
 
@@ -75,27 +81,17 @@ namespace CoTuongOnline.Client
         /// Gửi dữ liệu thô tới server.
         /// (Protocol framing nếu cần thì phía game logic sẽ tự đóng gói.)
         /// </summary>
-      public async Task SendAsync(byte[] payload, CancellationToken ct = default)
-{
-    if (payload == null) throw new ArgumentNullException(nameof(payload));
-    ThrowIfDisposed();
-    if (_stream == null)
-        throw new InvalidOperationException("Not connected. Call ConnectAsync first.");
+        public async Task SendAsync(byte[] payload, CancellationToken ct = default)
+        {
+            if (payload == null) throw new ArgumentNullException(nameof(payload));
+            ThrowIfDisposed();
+            if (_stream == null)
+                throw new InvalidOperationException("Not connected. Call ConnectAsync first.");
 
-    await _sendLock.WaitAsync(ct).ConfigureAwait(false);
-    try
-    {
-        ThrowIfDisposed();
-        if (_stream == null)
-            throw new InvalidOperationException("Not connected. Call ConnectAsync first.");
+            ct.ThrowIfCancellationRequested();
+            await _stream.WriteAsync(payload, ct).ConfigureAwait(false);
+        }
 
-        await _stream.WriteAsync(payload, ct).ConfigureAwait(false);
-    }
-    finally
-    {
-        _sendLock.Release();
-    }
-}
         private async Task ReceiveLoopAsync(CancellationToken ct)
         {
             if (_stream == null) return;
@@ -112,9 +108,10 @@ namespace CoTuongOnline.Client
                 {
                     break;
                 }
-                catch
+                catch (Exception ex)
                 {
                     // Có thể do server đóng kết nối hoặc lỗi mạng.
+                    ConnectionError?.Invoke(ex);
                     break;
                 }
 
@@ -189,4 +186,3 @@ namespace CoTuongOnline.Client
         }
     }
 }
-

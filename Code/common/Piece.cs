@@ -1,65 +1,42 @@
-﻿namespace CoTuongOnline.Common
-{
-    // Màu cờ
-    public enum PieceColor
-    {
-        Red,
-        Black
-    }
+﻿using System; 
 
-    // Quân cờ
+namespace CoTuongOnline.Common 
+{
+    // Enum định nghĩa các loại quân cờ trong cờ tướng
     public enum PieceType
     {
-        King,     // Tướng 
+        General,  // Tướng
         Advisor,  // Sĩ
         Elephant, // Tượng
         Horse,    // Mã
-        Chariot,  // Xe
+        Rook,     // Xe
         Cannon,   // Pháo
-        Soldier   // Tốt 
+        Soldier   // Tốt
     }
 
-    // Tọa độ 
-    public struct Position
-    {
-        public int Y { get; set; }  // Hàng ngang - Row 0-9
-        public int X { get; set; }  // Hàng dọc - Column 0-8
-
-        public Position(int x, int y)
-        {
-            Y = y;
-            X = x;
-        }
-
-        public override string ToString() => $"({X}, {Y})";
-    }
-
-    // Class quân cờ 
+    // Lớp đại diện cho một quân cờ trên bàn cờ
     public class Piece
     {
-        public PieceType Type { get; set; }
-        public PieceColor Color { get; set; }
-        public Position Pos { get; set; }
-        //cái này 3 tham sô 
-       //public Piece(PieceType type, PieceColor color, Position pos)
-       // {
-       //     Type = type;
-       //     Color = color;
-       //     Pos = pos;
-        //}
+        public PieceType Type; // Loại quân cờ (Xe, Mã, Tướng...)
+        public bool IsRed;     // Màu quân cờ: true = Đỏ, false = Đen
+        public int Row;        // Vị trí hàng của quân cờ trên bàn cờ
+        public int Col;        // Vị trí cột của quân cờ trên bàn cờ
 
-        // hàm khởi tạo 4 tham số 
-        public Piece(PieceType type, PieceColor color, int x, int y)
+        // Constructor: Hàm khởi tạo khi tạo một quân cờ mới
+        public Piece(PieceType type, bool isRed, int row, int col)
         {
-            Type = type;
-            Color = color;
-            Pos = new Position(x, y);
+            Type = type;   // Gán loại quân cờ
+            IsRed = isRed; // Gán màu quân cờ
+            Row = row;     // Gán vị trí hàng
+            Col = col;     // Gán vị trí cột
         }
 
+        // Hàm override ToString để hiển thị thông tin quân cờ khi debug hoặc in ra console
         public override string ToString()
         {
-            string colorPrefix = (Color == PieceColor.Red) ? "R" : "B";  //cái này để R/B trước quân cờ (phân biệt màu)
-            return $"{colorPrefix}_{Type}";
+            // Trả về chuỗi gồm:
+            // Loại quân + màu quân + vị trí trên bàn cờ
+            return $"{Type} ({(IsRed ? "Red" : "Black")}) [{Row},{Col}]";
         }
     }
 }

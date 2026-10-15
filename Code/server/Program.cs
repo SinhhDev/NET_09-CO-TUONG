@@ -12,8 +12,6 @@ namespace ChessServer
             Console.WriteLine("========================================");
             Console.WriteLine("     CHẠY STRESS TEST CHAT HANDLER     ");
             Console.WriteLine("========================================");
-            var chat = new ChatHandler();
-            chat.RunStressTest();
             Console.WriteLine("========================================");
             Console.WriteLine("     STRESS TEST HOÀN THÀNH!           ");
             Console.WriteLine("========================================\n");

@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net10.0-windows</TargetFramework>
+		<UseWindowsForms>true</UseWindowsForms>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<EnableWindowsTargeting>true</EnableWindowsTargeting>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Remove="Sounds\capture.wav" />
+		<None Remove="Sounds\move.wav" />
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Include="..\common\Protocol.cs" />
+		<Compile Include="..\common\Board.cs" />
+		<Compile Include="..\common\Piece.cs" />
+		<Compile Include="..\common\GameTimer.cs" />
+		<Compile Include="..\common\ChessRules.cs" />
+		<Compile Include="..\common\MoveValidator.cs" />
+		<Compile Include="..\common\FinalLogic.cs" />
+	</ItemGroup>
+	<ItemGroup>
+		<Content Include="Sounds\capture.wav">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Include="Sounds\move.wav">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+</Project>
