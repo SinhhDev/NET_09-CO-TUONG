@@ -11,7 +11,7 @@ using CoTuongOnline.Network;
 
 namespace CoTuongOnline.Client
 {
-    public partial class Form1 : Form
+    public partial class FormGame : Form
     {
         private const int Cell = 60;
         private const int StartX = 30;
@@ -46,7 +46,7 @@ namespace CoTuongOnline.Client
             { PieceType.Soldier,  "tot"   },
         };
 
-        public Form1()
+        public FormGame()
         {
             InitializeComponent();
             this.ClientSize = new Size(StartX * 2 + 8 * Cell + 200, StartY * 2 + 9 * Cell);
@@ -54,14 +54,14 @@ namespace CoTuongOnline.Client
             this.DoubleBuffered = true;
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
-            this.Paint += Form1_Paint;
-            this.Load += Form1_Load;
-            this.MouseClick += Form1_MouseClick;
+            this.Paint += FormGame_Paint;
+            this.Load += FormGame_Load;
+            this.MouseClick += FormGame_MouseClick;
             LoadImages();
             _board.Init();
         }
 
-        private void Form1_Paint(object sender, PaintEventArgs e)
+        private void FormGame_Paint(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -128,7 +128,7 @@ namespace CoTuongOnline.Client
                 }
         }
 
-        private void Form1_MouseClick(object sender, MouseEventArgs e)
+        private void FormGame_MouseClick(object sender, MouseEventArgs e)
         {
             int col = (e.X - StartX + Cell / 2) / Cell;
             int row = (e.Y - StartY + Cell / 2) / Cell;
@@ -274,7 +274,7 @@ namespace CoTuongOnline.Client
             }
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private void FormGame_Load(object sender, EventArgs e)
         {
             int btnX = StartX * 2 + 8 * Cell + 10;
 
