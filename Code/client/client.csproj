@@ -15,10 +15,6 @@
 		<Compile Include="..\common\Protocol.cs" />
 		<Compile Include="..\common\Board.cs" />
 		<Compile Include="..\common\Piece.cs" />
-		<Compile Include="..\common\GameTimer.cs" />
-		<Compile Include="..\common\ChessRules.cs" />
-		<Compile Include="..\common\MoveValidator.cs" />
-		<Compile Include="..\common\FinalLogic.cs" />
 	</ItemGroup>
 	<ItemGroup>
 		<Content Include="Sounds\capture.wav">
