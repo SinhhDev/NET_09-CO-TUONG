@@ -45,23 +45,18 @@ Dự án xây dựng ứng dụng chơi Cờ Tướng qua mạng theo mô hình 
 ## 🗂️ Cấu Trúc Repository
 
 ```
-co-tuong-online/
-├── src/                        # Toàn bộ mã nguồn
-│   ├── server/                 # Code phía Server
-│   │   └── ...
-│   ├── client/                 # Code phía Client
-│   │   └── ...
-│   └── common/                 # Logic dùng chung (luật cờ, v.v.)
-│       └── ...
-├── docs/                       # Tài liệu
-│   ├── Bao_cao.docx            # Báo cáo Word
-│   └── Thuyet_trinh.pptx       # PowerPoint thuyết trình
-├── reports/                    
-│   └── Phan_cong.xlsx          # Bảng phân công nhiệm vụ
-├── assets/                     
-│   └── images/                 # Hình ảnh quân cờ, bàn cờ
-├── .gitignore
-└── README.md
+NET_09_CO-TUONG/
+├── Code/                       # Toàn bộ mã nguồn dự án
+│   ├── client/                 # Mã nguồn phía Client
+│   ├── common/                 # Logic dùng chung (luật cờ, model...)
+│   └── server/                 # Mã nguồn phía Server
+├── DOCX/                       # Tài liệu báo cáo (Word)
+├── Extra/                      # Thông tin bổ sung
+│   ├── images/                 # Hình ảnh quân cờ, bàn cờ, ảnh minh họa
+│   └── tasks/                  # Các file phân công nhiệm vụ
+├── PPTX/                       # Tài liệu thuyết trình (PowerPoint)
+├── .gitignore                  # File cấu hình bỏ qua các file không cần thiết trên Git
+└── README.md                   # File giới thiệu dự án
 ```
 
 ---
