@@ -4,7 +4,7 @@ namespace CoTuongOnline.Common
 {
     public class Board
     {
-        public Piece[,] grid = new Piece[10, 9];
+        public Piece?[,] grid = new Piece?[10, 9];
 
         public void Init()
         {
@@ -51,6 +51,8 @@ namespace CoTuongOnline.Common
         {
             if (grid[fromRow, fromCol] == null) { Console.WriteLine("Không có quân!"); return; }
             grid[toRow, toCol] = grid[fromRow, fromCol];
+            grid[toRow, toCol].Row = toRow;
+            grid[toRow, toCol].Col = toCol;
             grid[fromRow, fromCol] = null;
         }
     }
