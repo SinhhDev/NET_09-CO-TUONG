@@ -31,8 +31,8 @@ namespace ChessServer
             Logger.WriteLog($"[ROOM {_roomId}] Ván đấu bắt đầu!");
 
             // Gửi vai trò cho 2 người chơi
-            SendBytes(_player1, Protocol.CreateGameStart("RED"));
-            SendBytes(_player2, Protocol.CreateGameStart("BLACK"));
+            RoomManager.SendBytes(_player1, Protocol.CreateGameStart("RED"));
+            RoomManager.SendBytes(_player2, Protocol.CreateGameStart("BLACK"));
 
             // Chạy 2 luồng lắng nghe song song
             Task t1 = Task.Run(() => ListenFrom(_player1, _player2, "Đỏ"));
@@ -131,25 +131,9 @@ namespace ChessServer
                 _gameRunning = false;
 
                 // Báo người còn lại biết đối thủ đã thoát
-                SendBytes(receiver, Protocol.CreateGameEnd("Đối thủ đã thoát khỏi phòng."));
+                RoomManager.SendBytes(receiver, Protocol.CreateGameEnd("Đối thủ đã thoát khỏi phòng."));
 
                 try { sender.Close(); } catch { }
-                Logger.WriteLog($"[ROOM {_roomId}] {role} đã ngắt kết nối.");
-            }
-        }
-
-        private static void SendBytes(TcpClient client, byte[] data)
-        {
-            try
-            {
-                lock (client)
-                {
-                    client.GetStream().Write(data, 0, data.Length);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.WriteLog($"[ROOM] Lỗi gửi: {ex.Message}");
             }
         }
     }
