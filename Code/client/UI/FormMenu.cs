@@ -28,7 +28,8 @@ namespace CoTuongOnline.Client
 
             btnStart.Click += (s, e) =>
             {
-                FormGame game = new FormGame(); // Đã sửa Form1 thành FormGame
+                FormGame game = new FormGame();
+                game.FormClosed += (sender, args) => this.Close();
                 game.Show();
                 this.Hide();
             };
