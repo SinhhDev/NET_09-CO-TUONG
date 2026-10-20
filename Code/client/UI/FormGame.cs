@@ -18,6 +18,8 @@ namespace CoTuongOnline.Client
         private Board _board = new Board();
         private Point? _selectedCell = null;
         private List<Point> _validMoves = new List<Point>();
+        private Point? _lastFrom = null;
+        private Point? _lastTo = null;
         private bool _isRedTurn = true;
 
         // === NETWORK ===
@@ -26,10 +28,6 @@ namespace CoTuongOnline.Client
         private bool _isPlayerRed = true;
 
         private GameTimer _gameTimer = new GameTimer();
-        private Label lblTimerRed = null!;
-        private Label lblTimerBlack = null!;
-        private TextBox txtStatus = null!;
-        private ChatBox _chatBox = null!;
 
         private readonly Dictionary<string, Image> _pieces = new Dictionary<string, Image>();
 
@@ -46,6 +44,7 @@ namespace CoTuongOnline.Client
 
         public FormGame()
         {
+            InitializeComponent();
             this.ClientSize = new Size(StartX * 2 + 8 * Cell + 200, StartY * 2 + 9 * Cell);
             this.Text = "Cờ Tướng Online";
             this.DoubleBuffered = true;
@@ -100,18 +99,32 @@ namespace CoTuongOnline.Client
             g.DrawString("楚河", fontRiver, Brushes.DarkRed, StartX + 1.4f * Cell, StartY + 4.15f * Cell);
             g.DrawString("漢界", fontRiver, Brushes.DarkRed, StartX + 4.8f * Cell, StartY + 4.15f * Cell);
 
+            using (var lastBrush = new SolidBrush(Color.FromArgb(110, 100, 180, 255)))
+            {
+                foreach (var c in new[] { _lastFrom, _lastTo })
+                    if (c.HasValue)
+                        g.FillRectangle(lastBrush, StartX + c.Value.X * Cell - Cell / 2, StartY + c.Value.Y * Cell - Cell / 2, Cell, Cell);
+            }
+
             if (_selectedCell.HasValue)
             {
                 int hx = StartX + _selectedCell.Value.X * Cell - Cell / 2;
                 int hy = StartY + _selectedCell.Value.Y * Cell - Cell / 2;
-                g.FillRectangle(new SolidBrush(Color.FromArgb(120, 255, 215, 0)), hx, hy, Cell, Cell);
+                using var selBrush = new SolidBrush(Color.FromArgb(150, 255, 215, 0));
+                using var selPen = new Pen(Color.Goldenrod, 3);
+                g.FillRectangle(selBrush, hx, hy, Cell, Cell);
+                g.DrawRectangle(selPen, hx + 1, hy + 1, Cell - 2, Cell - 2);
             }
 
-            foreach (var p in _validMoves)
+            using (var dotBrush = new SolidBrush(Color.FromArgb(160, 0, 180, 0)))
             {
-                int cx = StartX + p.X * Cell;
-                int cy = StartY + p.Y * Cell;
-                g.FillEllipse(new SolidBrush(Color.FromArgb(160, 0, 180, 0)), cx - 10, cy - 10, 20, 20);
+                foreach (var p in _validMoves)
+                {
+                    if (_board.grid[p.Y, p.X] != null) continue;
+                    int cx = StartX + p.X * Cell;
+                    int cy = StartY + p.Y * Cell;
+                    g.FillEllipse(dotBrush, cx - 10, cy - 10, 20, 20);
+                }
             }
 
             for (int row = 0; row < 10; row++)
@@ -123,6 +136,15 @@ namespace CoTuongOnline.Client
                     string key = $"{_pieceKeyMap[p.Type]}_{color}";
                     DrawPiece(g, key, col, row);
                 }
+
+            using (var ringPen = new Pen(Color.FromArgb(230, 220, 30, 30), 3))
+            {
+                foreach (var p in _validMoves)
+                {
+                    if (_board.grid[p.Y, p.X] == null) continue;
+                    g.DrawEllipse(ringPen, StartX + p.X * Cell - 23, StartY + p.Y * Cell - 23, 46, 46);
+                }
+            }
         }
 
         private void FormGame_MouseClick(object sender, MouseEventArgs e)
@@ -168,6 +190,8 @@ namespace CoTuongOnline.Client
             bool moved = MoveValidator.TryMove(_board, fromRow, fromCol, row, col, _isRedTurn);
             if (moved)
             {
+                _lastFrom = new Point(fromCol, fromRow);
+                _lastTo = new Point(col, row);
                 if (clickedPiece != null)
                     SoundManager.PlayCapture();
                 else
@@ -180,8 +204,7 @@ namespace CoTuongOnline.Client
                 _gameTimer.StopCountdown();
                 _gameTimer.StartTurn();
 
-                txtStatus.Text = _isRedTurn ? "🔴 Lượt Đỏ" : "⚫ Lượt Đen";
-                txtStatus.ForeColor = _isRedTurn ? Color.DarkRed : Color.Black;
+                RefreshStatus();
 
                 _selectedCell = null;
                 _validMoves.Clear();
@@ -231,7 +254,7 @@ namespace CoTuongOnline.Client
             int size = Cell - 6;
             int cx = StartX + col * Cell;
             int cy = StartY + row * Cell;
-            g.DrawImage(_pieces[key], cx - size / 2, cy - size / 2, size, size);
+            g.DrawImage(_pieces[key], cx - size / 2, cy - size / 2 + 2, size, size);
         }
 
         private void DrawMark(Graphics g, Pen pen, int col, int row)
@@ -286,45 +309,6 @@ namespace CoTuongOnline.Client
 
         private void FormGame_Load(object sender, EventArgs e)
         {
-            int btnX = StartX * 2 + 8 * Cell + 10;
-
-            txtStatus = new TextBox
-            {
-                Text = "🔴 Lượt Đỏ",
-                Location = new Point(btnX, 10),
-                Size = new Size(160, 40),
-                Font = new Font("Arial", 13, FontStyle.Bold),
-                ReadOnly = true,
-                TextAlign = HorizontalAlignment.Center,
-                BorderStyle = BorderStyle.FixedSingle,
-                BackColor = Color.White,
-                ForeColor = Color.DarkRed
-            };
-            txtStatus.TabStop = false;
-            this.Controls.Add(txtStatus);
-
-            lblTimerRed = new Label
-            {
-                Text = "🔴 Đỏ: 30s",
-                Location = new Point(btnX, 60),
-                Size = new Size(160, 30),
-                Font = new Font("Arial", 12, FontStyle.Bold),
-                ForeColor = Color.DarkRed,
-                TextAlign = ContentAlignment.MiddleCenter
-            };
-            this.Controls.Add(lblTimerRed);
-
-            lblTimerBlack = new Label
-            {
-                Text = "⚫ Đen: 30s",
-                Location = new Point(btnX, 95),
-                Size = new Size(160, 30),
-                Font = new Font("Arial", 12, FontStyle.Bold),
-                ForeColor = Color.Black,
-                TextAlign = ContentAlignment.MiddleCenter
-            };
-            this.Controls.Add(lblTimerBlack);
-
             _gameTimer.CountdownChanged += (seconds) =>
             {
                 if (this.IsDisposed) return;
@@ -346,73 +330,6 @@ namespace CoTuongOnline.Client
                     MessageBox.Show(msg, "Hết Giờ");
                     ShowGameResult(!_isRedTurn);
                 }));
-            };
-
-            Button btnThachDau = new Button
-            {
-                Text = "Thách Đấu",
-                Size = new Size(160, 45),
-                Location = new Point(btnX, 140),
-                Font = new Font("Arial", 11, FontStyle.Bold),
-                BackColor = Color.SteelBlue,
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
-            };
-            btnThachDau.Click += async (s, ev) =>
-            {
-                if (_isOnline)
-                {
-                    MessageBox.Show("Bạn đã kết nối rồi!", "Thông báo");
-                    return;
-                }
-                string? serverIp = PromptServerIp();
-                if (string.IsNullOrEmpty(serverIp)) return;
-                btnThachDau.Enabled = false;
-                btnThachDau.Text = "Đang nối...";
-                try
-                {
-                    await ConnectToServer(serverIp, 54000);
-                    btnThachDau.Text = "Đã kết nối";
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Không thể kết nối: {ex.Message}", "Lỗi");
-                    btnThachDau.Enabled = true;
-                    btnThachDau.Text = "Thách Đấu";
-                }
-            };
-            this.Controls.Add(btnThachDau);
-
-            Button btnReplay = new Button
-            {
-                Text = "Chơi Lại",
-                Size = new Size(160, 45),
-                Location = new Point(btnX, 195),
-                Font = new Font("Arial", 11, FontStyle.Bold),
-                BackColor = Color.SeaGreen,
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
-            };
-            btnReplay.Click += (s, ev) => ResetGame();
-            this.Controls.Add(btnReplay);
-
-            Button btnThoat = new Button
-            {
-                Text = "Thoát",
-                Size = new Size(160, 45),
-                Location = new Point(btnX, 250),
-                Font = new Font("Arial", 11, FontStyle.Bold),
-                BackColor = Color.IndianRed,
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
-            };
-            btnThoat.Click += (s, ev) => Application.Exit();
-            this.Controls.Add(btnThoat);
-
-            _chatBox = new ChatBox
-            {
-                Location = new Point(btnX, 310),
-                Size = new Size(160, 220)
             };
 
             _chatBox.OnChatMessage += (msg) =>
@@ -439,8 +356,63 @@ namespace CoTuongOnline.Client
                 }
             };
 
-            this.Controls.Add(_chatBox);
+            RefreshStatus();
             _gameTimer.StartGame();
+        }
+
+        private void SetStatus(string text, Color color)
+        {
+            txtStatus.Text = text;
+            txtStatus.ForeColor = color;
+        }
+
+        private void RefreshStatus()
+        {
+            if (_isOnline)
+            {
+                bool myTurn = _isRedTurn == _isPlayerRed;
+                SetStatus(myTurn ? "✅ Đến lượt bạn" : "⏳ Đang chờ đối thủ...",
+                          myTurn ? Color.SeaGreen : Color.DimGray);
+            }
+            else
+            {
+                SetStatus(_isRedTurn ? "🔴 Lượt Đỏ" : "⚫ Lượt Đen",
+                          _isRedTurn ? Color.DarkRed : Color.Black);
+            }
+        }
+
+        private async void btnThachDau_Click(object? sender, EventArgs e)
+        {
+            if (_isOnline)
+            {
+                MessageBox.Show("Bạn đã kết nối rồi!", "Thông báo");
+                return;
+            }
+            string? serverIp = PromptServerIp();
+            if (string.IsNullOrEmpty(serverIp)) return;
+            btnThachDau.Enabled = false;
+            btnThachDau.Text = "Đang nối...";
+            try
+            {
+                await ConnectToServer(serverIp, 54000);
+                btnThachDau.Text = "Đã kết nối";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Không thể kết nối: {ex.Message}", "Lỗi");
+                btnThachDau.Enabled = true;
+                btnThachDau.Text = "Thách Đấu";
+            }
+        }
+
+        private void btnReplay_Click(object? sender, EventArgs e)
+        {
+            ResetGame();
+        }
+
+        private void btnThoat_Click(object? sender, EventArgs e)
+        {
+            Application.Exit();
         }
 
         private void ShowGameResult(bool isWin)
@@ -457,6 +429,8 @@ namespace CoTuongOnline.Client
             _board.Init();
             _selectedCell = null;
             _validMoves.Clear();
+            _lastFrom = null;
+            _lastTo = null;
             _isRedTurn = true;
 
             _gameTimer.StopAll();
@@ -464,8 +438,7 @@ namespace CoTuongOnline.Client
 
             lblTimerRed.Text = "🔴 Đỏ: 30s";
             lblTimerBlack.Text = "⚫ Đen: 30s";
-            txtStatus.Text = "🔴 Lượt Đỏ";
-            txtStatus.ForeColor = Color.DarkRed;
+            RefreshStatus();
 
             this.Invalidate();
         }
@@ -482,6 +455,7 @@ namespace CoTuongOnline.Client
             await _connectionGuard.ConnectAsync(serverIp, port);
             WireUpGameEvents();
             _chatBox.AppendLog("[Kết nối] Đã kết nối! Đang chờ đối thủ...", Color.DarkGreen);
+            SetStatus("⏳ Đang chờ đối thủ...", Color.DimGray);
         }
 
         private void WireUpGameEvents()
@@ -499,11 +473,12 @@ namespace CoTuongOnline.Client
                 _board.Init();
                 _selectedCell = null;
                 _validMoves.Clear();
+                _lastFrom = null;
+                _lastTo = null;
 
                 string color = isRed ? "Đỏ (đi trước)" : "Đen (đi sau)";
                 _chatBox.AppendLog($"[Game] Bạn chơi quân {color}!", Color.DarkGreen);
-                txtStatus.Text = "🔴 Lượt Đỏ";
-                txtStatus.ForeColor = Color.DarkRed;
+                RefreshStatus();
 
                 _gameTimer.StopAll();
                 _gameTimer.StartGame();
@@ -537,6 +512,9 @@ namespace CoTuongOnline.Client
             bool moved = MoveValidator.TryMove(_board, fromRow, fromCol, toRow, toCol, !_isPlayerRed);
             if (!moved) return;
 
+            _lastFrom = new Point(fromCol, fromRow);
+            _lastTo = new Point(toCol, toRow);
+
             if (captured != null)
                 SoundManager.PlayCapture();
             else
@@ -546,8 +524,7 @@ namespace CoTuongOnline.Client
             _gameTimer.StopCountdown();
             _gameTimer.StartTurn();
 
-            txtStatus.Text = _isRedTurn ? "🔴 Lượt Đỏ" : "⚫ Lượt Đen";
-            txtStatus.ForeColor = _isRedTurn ? Color.DarkRed : Color.Black;
+            RefreshStatus();
 
             _selectedCell = null;
             _validMoves.Clear();
