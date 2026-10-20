@@ -30,11 +30,13 @@ namespace CoTuongOnline.Common
     /// </summary>
     public class GameTimer : IDisposable
     {
+        public const int TurnDurationSeconds = 45;
+
         // _gameTimer: Đếm tổng thời gian ván đấu (chu kỳ 100ms)
         // _countdownTimer: Đếm ngược thời gian suy nghĩ cho từng lượt (chu kỳ 1000ms = 1 giây)
         private System.Timers.Timer _gameTimer = new(100), _countdownTimer = new(1000);
         private long _gameTimeMs;                 // Tổng thời gian ván đấu tính bằng mili-giây
-        private int _countdownSeconds = 30;       // Thời gian đếm ngược mỗi lượt (mặc định 30 giây)
+        private int _countdownSeconds = TurnDurationSeconds; // Thời gian suy nghĩ mỗi lượt
         private bool _countdownRunning;           // Trạng thái đếm ngược có đang chạy hay không
         private List<NuocDi> _lichSu = new();     // Danh sách lưu lại các nước đi trong ván
         private TimerState _state = TimerState.Stopped; // Trạng thái hiện tại của bộ đếm
@@ -69,7 +71,7 @@ namespace CoTuongOnline.Common
         {
             _state = TimerState.Running;
             _gameTimer.Start();
-            _countdownSeconds = 30;
+            _countdownSeconds = TurnDurationSeconds;
             _countdownTimer.Stop();
             _countdownTimer.Start();
             _countdownRunning = true;
@@ -80,11 +82,11 @@ namespace CoTuongOnline.Common
         /// </summary>
         public void StartTurn()
         {
-            _countdownSeconds = 30;
+            _countdownSeconds = TurnDurationSeconds;
             _countdownTimer.Stop();
             _countdownTimer.Start();
             _countdownRunning = true;
-            CountdownChanged?.Invoke(30);
+            CountdownChanged?.Invoke(TurnDurationSeconds);
         }
 
         /// <summary>
@@ -140,7 +142,7 @@ namespace CoTuongOnline.Common
             _gameTimer.Stop(); 
             _countdownTimer.Stop();
             _gameTimeMs = 0; 
-            _countdownSeconds = 30;
+            _countdownSeconds = TurnDurationSeconds;
         }
 
         /// <summary>
