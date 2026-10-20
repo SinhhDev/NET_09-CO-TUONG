@@ -50,7 +50,7 @@ namespace CoTuongOnline.Client
             lblTimerRed.Location = new Point(550, 60);
             lblTimerRed.Name = "lblTimerRed";
             lblTimerRed.Size = new Size(160, 30);
-            lblTimerRed.Text = "🔴 Đỏ: 30s";
+            lblTimerRed.Text = "🔴 Đỏ: 45s";
             lblTimerRed.TextAlign = ContentAlignment.MiddleCenter;
 
             lblTimerBlack.Font = new Font("Arial", 12F, FontStyle.Bold);
@@ -58,7 +58,7 @@ namespace CoTuongOnline.Client
             lblTimerBlack.Location = new Point(550, 95);
             lblTimerBlack.Name = "lblTimerBlack";
             lblTimerBlack.Size = new Size(160, 30);
-            lblTimerBlack.Text = "⚫ Đen: 30s";
+            lblTimerBlack.Text = "⚫ Đen: 45s";
             lblTimerBlack.TextAlign = ContentAlignment.MiddleCenter;
 
             btnThachDau.BackColor = Color.SteelBlue;

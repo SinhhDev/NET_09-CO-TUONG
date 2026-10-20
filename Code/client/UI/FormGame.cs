@@ -436,8 +436,8 @@ namespace CoTuongOnline.Client
             _gameTimer.StopAll();
             _gameTimer.StartGame();
 
-            lblTimerRed.Text = "🔴 Đỏ: 30s";
-            lblTimerBlack.Text = "⚫ Đen: 30s";
+            lblTimerRed.Text = $"🔴 Đỏ: {GameTimer.TurnDurationSeconds}s";
+            lblTimerBlack.Text = $"⚫ Đen: {GameTimer.TurnDurationSeconds}s";
             RefreshStatus();
 
             this.Invalidate();
