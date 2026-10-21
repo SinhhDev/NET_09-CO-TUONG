@@ -7,10 +7,6 @@ using CoTuongOnline.Network;
 
 namespace ChessServer
 {
-    /// <summary>
-    /// Xử lý tính năng Chat giữa 2 người chơi và bộ lọc tin nhắn (Spam filter + Bad words filter)
-    /// (Nhiệm vụ: Trần Thế Hiển - Tuần 3)
-    /// </summary>
     public class ChatHandler
     {
         private static ChatHandler? _instance;

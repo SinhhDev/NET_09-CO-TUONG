@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -27,6 +27,9 @@ namespace ChessServer
 
                     // Ghi log IP của client vừa kết nối
                     Logger.WriteLog($"[+] Client kết nối từ: {incomingClient.Client.RemoteEndPoint}");
+
+                    // Đăng ký người chơi vào UserManager để theo dõi danh sách Online
+                    UserManager.Instance.Register(incomingClient);
 
                     // Đưa client vào RoomManager để ghép cặp (chạy trên luồng riêng bên trong)
                     RoomManager.Instance.HandleNewClient(incomingClient);

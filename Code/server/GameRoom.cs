@@ -1,5 +1,6 @@
 using System;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
 using CoTuongOnline.Network;
 
@@ -15,6 +16,8 @@ namespace ChessServer
         private readonly TcpClient _player2;
         private readonly string _roomId;
         private bool _gameRunning = true;
+
+        public string RoomId => _roomId;
 
         // Kích thước header theo Protocol: 1 byte Type + 4 byte Length
         private const int HEADER_SIZE = 5;
@@ -96,6 +99,14 @@ namespace ChessServer
                     // ── Bước 3: Ghi log và relay sang đối thủ ────────────────
                     Logger.WriteLog($"[ROOM {_roomId}] {role}: packet type={packetType}, len={payloadLen}");
 
+                    // Nếu là packet Chat (33) -> Xử lý qua ChatHandler (bộ lọc từ cấm & chống spam)
+                    if (packetType == (byte)PacketType.Chat)
+                    {
+                        string chatMessage = Encoding.UTF8.GetString(payloadBuf);
+                        ChatHandler.Instance.HandleRoomChat(sender, receiver, chatMessage, role, _roomId);
+                        continue;
+                    }
+
                     // Ghép lại packet gốc (header + payload) và gửi sang đối thủ
                     byte[] fullPacket = new byte[HEADER_SIZE + payloadLen];
                     Array.Copy(headerBuf, fullPacket, HEADER_SIZE);
@@ -132,6 +143,10 @@ namespace ChessServer
 
                 // Báo người còn lại biết đối thủ đã thoát
                 RoomManager.SendBytes(receiver, Protocol.CreateGameEnd("Đối thủ đã thoát khỏi phòng."));
+
+                // Dọn dẹp session người chơi trong ChatHandler & UserManager
+                ChatHandler.Instance.RemoveClient(sender);
+                UserManager.Instance.Unregister(sender);
 
                 try { sender.Close(); } catch { }
             }

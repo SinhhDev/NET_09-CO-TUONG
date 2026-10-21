@@ -24,7 +24,7 @@ namespace CoTuongOnline.Network
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct PacketHeader
+    public struct PacketHeader
     {
         public PacketType Type;
         public int Length;
@@ -34,7 +34,13 @@ public struct PacketHeader
     {
         private const int HEADER_SIZE = 5;
 
-        // Tạo gói tin
+        // Tạo gói tin xác thực / đăng nhập
+        public static byte[] CreateLogin(string username) => CreatePacket(PacketType.Login, username);
+        public static byte[] CreateLoginOK(string message = "") => CreatePacket(PacketType.LoginOK, message);
+        public static byte[] CreateLoginFail(string reason) => CreatePacket(PacketType.LoginFail, reason);
+        public static byte[] CreateLogout() => CreatePacket(PacketType.Logout, "");
+
+        // Tạo gói tin trận đấu
         public static byte[] CreateReady() => CreatePacket(PacketType.Ready, "");
         public static byte[] CreateMove(int x1, int y1, int x2, int y2) => CreatePacket(PacketType.Move, $"{x1},{y1},{x2},{y2}");
         public static byte[] CreateSurrender() => CreatePacket(PacketType.Surrender, "");
@@ -42,7 +48,6 @@ public struct PacketHeader
 
         public static byte[] CreateGameStart(string color) => CreatePacket(PacketType.GameStart, color);
         public static byte[] CreateGameEnd(string reason) => CreatePacket(PacketType.GameEnd, reason);
-
 
         private static byte[] CreatePacket(PacketType type, string data)
         {
@@ -60,14 +65,14 @@ public struct PacketHeader
         // Đọc gói tin
         public static PacketType ReadType(byte[] buffer) => buffer.Length < HEADER_SIZE ? PacketType.Heartbeat : BytesToStruct<PacketHeader>(buffer).Type;
         public static string ReadData(byte[] buffer)
-{
-    if (buffer == null || buffer.Length < HEADER_SIZE)
-        throw new ArgumentException("Buffer không hợp lệ.");
-    var header = BytesToStruct<PacketHeader>(buffer);
-    if (buffer.Length < HEADER_SIZE + header.Length)
-        throw new ArgumentException("Buffer không đủ dữ liệu.");
-    return Encoding.UTF8.GetString(buffer, HEADER_SIZE, header.Length);
-}
+        {
+            if (buffer == null || buffer.Length < HEADER_SIZE)
+                throw new ArgumentException("Buffer không hợp lệ.");
+            var header = BytesToStruct<PacketHeader>(buffer);
+            if (buffer.Length < HEADER_SIZE + header.Length)
+                throw new ArgumentException("Buffer không đủ dữ liệu.");
+            return Encoding.UTF8.GetString(buffer, HEADER_SIZE, header.Length);
+        }
 
         // Helper
         private static byte[] StructToBytes<T>(T data) where T : struct

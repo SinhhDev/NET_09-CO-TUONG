@@ -6,9 +6,6 @@ using System.Text.RegularExpressions;
 
 namespace ChessServer
 {
-    /// <summary>
-    /// Trạng thái hoạt động của người chơi trong hệ thống
-    /// </summary>
     public enum UserStatus
     {
         Online,     // Đã kết nối, đang rảnh

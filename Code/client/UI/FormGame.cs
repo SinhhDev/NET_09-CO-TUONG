@@ -489,7 +489,10 @@ namespace CoTuongOnline.Client
 
             listener.OnChatReceived += (msg) =>
             {
-                _chatBox.AppendOpponentMessage(msg);
+                if (msg.StartsWith("[Hệ thống]") || msg.StartsWith("[Server]"))
+                    _chatBox.AppendLog(msg, Color.OrangeRed);
+                else
+                    _chatBox.AppendOpponentMessage(msg);
             };
 
             listener.OnOpponentSurrender += () =>

@@ -32,6 +32,7 @@ namespace ChessServer
                 {
                     // Chưa có ai chờ → cho vào hàng chờ
                     _waitingClient = client;
+                    UserManager.Instance.SetStatus(client, UserStatus.Waiting);
                     Logger.WriteLog($"[ROOM] Người chơi đang chờ đối thủ...");
 
                     // QUAN TRỌNG: Dùng packet Chat để báo client.
@@ -48,6 +49,9 @@ namespace ChessServer
 
                     GameRoom room = new GameRoom(player1, player2);
                     _rooms.Add(room);
+
+                    UserManager.Instance.SetStatus(player1, UserStatus.InGame, room.RoomId);
+                    UserManager.Instance.SetStatus(player2, UserStatus.InGame, room.RoomId);
 
                     Logger.WriteLog($"[ROOM] Ghép cặp thành công! Phòng #{_rooms.Count} bắt đầu.");
 
