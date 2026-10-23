@@ -15,4 +15,7 @@
 		<Compile Include="..\common\MoveValidator.cs" />
 		<Compile Include="..\common\ChessRules.cs" />
 	</ItemGroup>
+	<ItemGroup>
+		<None Update="Sounds\*.wav" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
 </Project>

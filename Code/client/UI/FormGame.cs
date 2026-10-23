@@ -564,17 +564,4 @@ namespace CoTuongOnline.Client
             return dialog.ShowDialog() == DialogResult.OK ? textBox.Text.Trim() : null;
         }
     }
-
-    public static class SoundManager
-    {
-        public static void PlayMove()
-        {
-            try { System.Media.SystemSounds.Beep.Play(); } catch { }
-        }
-
-        public static void PlayCapture()
-        {
-            try { System.Media.SystemSounds.Exclamation.Play(); } catch { }
-        }
-    }
 }
