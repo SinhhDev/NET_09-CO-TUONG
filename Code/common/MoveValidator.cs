@@ -21,6 +21,12 @@ namespace CoTuongOnline.Common
             if (!IsValidMove(board, piece, fromRow, fromCol, toRow, toCol))
                 return false;
 
+            // Kiểm tra nước đi có khiến Tướng phe mình bị chiếu không (nước đi tự sát / bị chặn)
+            Board sim = board.Clone();
+            sim.Move(fromRow, fromCol, toRow, toCol);
+            if (ChessRules.IsUnderCheck(sim, isRedTurn))
+                return false;
+
             board.Move(fromRow, fromCol, toRow, toCol);
             return true;
         }
@@ -118,7 +124,7 @@ namespace CoTuongOnline.Common
             }
         }
 
-        private static int CountPiecesBetween(Board board, int r1, int c1, int r2, int c2)
+        public static int CountPiecesBetween(Board board, int r1, int c1, int r2, int c2)
         {
             int count = 0;
             if (r1 == r2)

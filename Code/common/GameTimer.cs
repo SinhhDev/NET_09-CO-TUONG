@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Timers;
 using System.Threading;
-using CoTuongOnline.Common;
 
 namespace CoTuongOnline.Common
 {
@@ -42,10 +41,10 @@ namespace CoTuongOnline.Common
         private TimerState _state = TimerState.Stopped; // Trạng thái hiện tại của bộ đếm
 
         // Các sự kiện (Events) để thông báo ra bên ngoài giao diện (UI)
-        public event Action<long> GameTimeChanged;
-        public event Action<int> CountdownChanged;
-        public event Action CountdownEnd;
-        public event Action<NuocDi> NuocDiAdded;
+        public event Action<long>? GameTimeChanged;
+        public event Action<int>? CountdownChanged;
+        public event Action? CountdownEnd;
+        public event Action<NuocDi>? NuocDiAdded;
 
         // Các thuộc tính (Properties) công khai để đọc dữ liệu
         public long GameTimeMs => _gameTimeMs;
@@ -119,7 +118,7 @@ namespace CoTuongOnline.Common
         /// <summary>
         /// Hàm xử lý mỗi khi đồng hồ đếm ngược trôi qua 1 giây
         /// </summary>
-        private void OnCountdownTick(object s, ElapsedEventArgs e)
+        private void OnCountdownTick(object? s, ElapsedEventArgs e)
         {
             if (_countdownSeconds > 0) 
             { 

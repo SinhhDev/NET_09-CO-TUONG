@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Media;
 using System.Windows.Forms;
@@ -10,14 +11,36 @@ namespace CoTuongOnline.Client
 
         public static void PlayMove()
         {
-            SoundPlayer player = new SoundPlayer(Path.Combine(basePath, "move.wav"));
-            player.Play();
+            try
+            {
+                string path = Path.Combine(basePath, "move.wav");
+                if (File.Exists(path))
+                {
+                    using SoundPlayer player = new SoundPlayer(path);
+                    player.Play();
+                }
+            }
+            catch
+            {
+                // Bỏ qua lỗi âm thanh để không làm crash game
+            }
         }
 
         public static void PlayCapture()
         {
-            SoundPlayer player = new SoundPlayer(Path.Combine(basePath, "capture.wav"));
-            player.Play();
+            try
+            {
+                string path = Path.Combine(basePath, "capture.wav");
+                if (File.Exists(path))
+                {
+                    using SoundPlayer player = new SoundPlayer(path);
+                    player.Play();
+                }
+            }
+            catch
+            {
+                // Bỏ qua lỗi âm thanh để không làm crash game
+            }
         }
     }
 }

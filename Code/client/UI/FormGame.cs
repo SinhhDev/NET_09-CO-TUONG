@@ -18,6 +18,7 @@ namespace CoTuongOnline.Client
         private Board _board = new Board();
         private Point? _selectedCell = null;
         private List<Point> _validMoves = new List<Point>();
+        private List<Point> _blockedMoves = new List<Point>();
         private Point? _lastFrom = null;
         private Point? _lastTo = null;
         private bool _isRedTurn = true;
@@ -57,7 +58,7 @@ namespace CoTuongOnline.Client
             _board.Init();
         }
 
-        private void FormGame_Paint(object sender, PaintEventArgs e)
+        private void FormGame_Paint(object? sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -106,6 +107,24 @@ namespace CoTuongOnline.Client
                         g.FillRectangle(lastBrush, StartX + c.Value.X * Cell - Cell / 2, StartY + c.Value.Y * Cell - Cell / 2, Cell, Cell);
             }
 
+            // [YÊU CẦU 1] Chiếu tướng: Hiện nền đỏ bao quanh quân Tướng bị chiếu
+            foreach (bool isRed in new[] { true, false })
+            {
+                if (ChessRules.IsUnderCheck(_board, isRed))
+                {
+                    Point? genPos = ChessRules.FindGeneral(_board, isRed);
+                    if (genPos.HasValue)
+                    {
+                        int gx = StartX + genPos.Value.X * Cell - Cell / 2;
+                        int gy = StartY + genPos.Value.Y * Cell - Cell / 2;
+                        using var checkBgBrush = new SolidBrush(Color.FromArgb(190, 255, 60, 60));
+                        using var checkBorderPen = new Pen(Color.Red, 3.5f);
+                        g.FillRectangle(checkBgBrush, gx, gy, Cell, Cell);
+                        g.DrawRectangle(checkBorderPen, gx + 1, gy + 1, Cell - 2, Cell - 2);
+                    }
+                }
+            }
+
             if (_selectedCell.HasValue)
             {
                 int hx = StartX + _selectedCell.Value.X * Cell - Cell / 2;
@@ -116,6 +135,7 @@ namespace CoTuongOnline.Client
                 g.DrawRectangle(selPen, hx + 1, hy + 1, Cell - 2, Cell - 2);
             }
 
+            // Nước đi hợp lệ: chấm màu xanh lá
             using (var dotBrush = new SolidBrush(Color.FromArgb(160, 0, 180, 0)))
             {
                 foreach (var p in _validMoves)
@@ -124,6 +144,20 @@ namespace CoTuongOnline.Client
                     int cx = StartX + p.X * Cell;
                     int cy = StartY + p.Y * Cell;
                     g.FillEllipse(dotBrush, cx - 10, cy - 10, 20, 20);
+                }
+            }
+
+            // [YÊU CẦU 2] Nước đi làm Tướng team mình bị chiếu đổi từ chấm xanh qua chấm đỏ (bị chặn)
+            using (var blockedDotBrush = new SolidBrush(Color.FromArgb(230, 220, 20, 20)))
+            using (var blockedBorderPen = new Pen(Color.DarkRed, 1.5f))
+            {
+                foreach (var p in _blockedMoves)
+                {
+                    if (_board.grid[p.Y, p.X] != null) continue;
+                    int cx = StartX + p.X * Cell;
+                    int cy = StartY + p.Y * Cell;
+                    g.FillEllipse(blockedDotBrush, cx - 10, cy - 10, 20, 20);
+                    g.DrawEllipse(blockedBorderPen, cx - 10, cy - 10, 20, 20);
                 }
             }
 
@@ -137,6 +171,25 @@ namespace CoTuongOnline.Client
                     DrawPiece(g, key, col, row);
                 }
 
+            // Viền đỏ hình tròn bao quanh Tướng bị chiếu để làm nổi bật hơn nữa
+            using (var generalCirclePen = new Pen(Color.Red, 3f))
+            {
+                foreach (bool isRed in new[] { true, false })
+                {
+                    if (ChessRules.IsUnderCheck(_board, isRed))
+                    {
+                        Point? genPos = ChessRules.FindGeneral(_board, isRed);
+                        if (genPos.HasValue)
+                        {
+                            int cx = StartX + genPos.Value.X * Cell;
+                            int cy = StartY + genPos.Value.Y * Cell;
+                            g.DrawEllipse(generalCirclePen, cx - 26, cy - 26, 52, 52);
+                        }
+                    }
+                }
+            }
+
+            // Vòng tròn đỏ cho các nước ăn quân hợp lệ
             using (var ringPen = new Pen(Color.FromArgb(230, 220, 30, 30), 3))
             {
                 foreach (var p in _validMoves)
@@ -145,9 +198,24 @@ namespace CoTuongOnline.Client
                     g.DrawEllipse(ringPen, StartX + p.X * Cell - 23, StartY + p.Y * Cell - 23, 46, 46);
                 }
             }
+
+            // Nước ăn quân nhưng bị chặn (khiến Tướng phe mình bị chiếu): vẽ vòng tròn và dấu chéo
+            using (var blockedRingPen = new Pen(Color.FromArgb(180, 160, 0, 0), 2.5f))
+            using (var blockedCrossPen = new Pen(Color.Red, 2.5f))
+            {
+                foreach (var p in _blockedMoves)
+                {
+                    if (_board.grid[p.Y, p.X] == null) continue;
+                    int cx = StartX + p.X * Cell;
+                    int cy = StartY + p.Y * Cell;
+                    g.DrawEllipse(blockedRingPen, cx - 23, cy - 23, 46, 46);
+                    g.DrawLine(blockedCrossPen, cx - 10, cy - 10, cx + 10, cy + 10);
+                    g.DrawLine(blockedCrossPen, cx - 10, cy + 10, cx + 10, cy - 10);
+                }
+            }
         }
 
-        private void FormGame_MouseClick(object sender, MouseEventArgs e)
+        private void FormGame_MouseClick(object? sender, MouseEventArgs e)
         {
             int col = (e.X - StartX + Cell / 2) / Cell;
             int row = (e.Y - StartY + Cell / 2) / Cell;
@@ -162,7 +230,7 @@ namespace CoTuongOnline.Client
                 if (clickedPiece == null) return;
                 if (clickedPiece.IsRed != _isRedTurn) return;
                 _selectedCell = new Point(col, row);
-                _validMoves = GetValidMovesFor(row, col);
+                ComputeMovesFor(row, col);
                 SoundManager.PlayMove();
                 this.Invalidate();
                 return;
@@ -175,6 +243,7 @@ namespace CoTuongOnline.Client
             {
                 _selectedCell = null;
                 _validMoves.Clear();
+                _blockedMoves.Clear();
                 this.Invalidate();
                 return;
             }
@@ -182,8 +251,16 @@ namespace CoTuongOnline.Client
             if (clickedPiece != null && clickedPiece.IsRed == _isRedTurn)
             {
                 _selectedCell = new Point(col, row);
-                _validMoves = GetValidMovesFor(row, col);
+                ComputeMovesFor(row, col);
                 this.Invalidate();
+                return;
+            }
+
+            // [YÊU CẦU 2] Nếu click vào ô bị chặn (chấm đỏ) -> Bị chặn, không cho đi
+            Point targetPoint = new Point(col, row);
+            if (_blockedMoves.Contains(targetPoint))
+            {
+                _chatBox.AppendLog("[Hệ thống] Nước đi này bị chặn vì làm Tướng bị chiếu!", Color.OrangeRed);
                 return;
             }
 
@@ -203,11 +280,13 @@ namespace CoTuongOnline.Client
                 _isRedTurn = !_isRedTurn;
                 _gameTimer.StopCountdown();
                 _gameTimer.StartTurn();
+                UpdateTimerLabelsAfterTurnChange();
 
                 RefreshStatus();
 
                 _selectedCell = null;
                 _validMoves.Clear();
+                _blockedMoves.Clear();
 
                 if (ChessRules.IsCheckmate(_board, _isRedTurn))
                     ShowGameResult(!_isRedTurn);
@@ -216,36 +295,44 @@ namespace CoTuongOnline.Client
             {
                 _selectedCell = null;
                 _validMoves.Clear();
+                _blockedMoves.Clear();
             }
 
             this.Invalidate();
         }
 
-        private List<Point> GetValidMovesFor(int row, int col)
+        private void ComputeMovesFor(int row, int col)
         {
-            var moves = new List<Point>();
+            _validMoves.Clear();
+            _blockedMoves.Clear();
+
             Piece? piece = _board.grid[row, col];
-            if (piece == null) return moves;
+            if (piece == null) return;
 
             for (int r = 0; r < 10; r++)
-                for (int c = 0; c < 9; c++)
-                    if (MoveValidator.TryMove(CloneBoard(_board), row, col, r, c, piece.IsRed))
-                        moves.Add(new Point(c, r));
-
-            return moves;
-        }
-
-        private Board CloneBoard(Board src)
-        {
-            var clone = new Board();
-            for (int r = 0; r < 10; r++)
+            {
                 for (int c = 0; c < 9; c++)
                 {
-                    var p = src.grid[r, c];
-                    if (p != null)
-                        clone.grid[r, c] = new Piece(p.Type, p.IsRed, p.Row, p.Col);
+                    Piece? target = _board.grid[r, c];
+                    if (target != null && target.IsRed == piece.IsRed) continue;
+
+                    if (MoveValidator.IsValidMove(_board, piece, row, col, r, c))
+                    {
+                        Board sim = _board.Clone();
+                        sim.Move(row, col, r, c);
+                        if (ChessRules.IsUnderCheck(sim, piece.IsRed))
+                        {
+                            // Nước đi làm Tướng phe mình bị chiếu -> BỊ CHẶN (Chấm đỏ)
+                            _blockedMoves.Add(new Point(c, r));
+                        }
+                        else
+                        {
+                            // Nước đi hợp lệ (Chấm xanh hoặc Vòng đỏ ăn quân)
+                            _validMoves.Add(new Point(c, r));
+                        }
+                    }
                 }
-            return clone;
+            }
         }
 
         private void DrawPiece(Graphics g, string key, int col, int row)
@@ -266,7 +353,7 @@ namespace CoTuongOnline.Client
             if (col > 0 && row > 0) { g.DrawLine(pen, x - offset, y - offset, x - offset - arm, y - offset); g.DrawLine(pen, x - offset, y - offset, x - offset, y - offset - arm); }
             if (col < 8 && row > 0) { g.DrawLine(pen, x + offset, y - offset, x + offset + arm, y - offset); g.DrawLine(pen, x + offset, y - offset, x + offset, y - offset - arm); }
             if (col > 0 && row < 9) { g.DrawLine(pen, x - offset, y + offset, x - offset - arm, y + offset); g.DrawLine(pen, x - offset, y + offset, x - offset, y + offset + arm); }
-            if (col < 8 && row < 9) { g.DrawLine(pen, x + offset, y + offset, x + offset + arm, y + offset); g.DrawLine(pen, x + offset, y + offset, x + offset, y + offset + arm); }
+            if (col < 8 && row < 9) { g.DrawLine(pen, x + offset, y + offset, x + offset + arm, y + offset); g.DrawLine(pen, x + offset, y + offset, x + offset, y + offset - arm); }
         }
 
         private void LoadImages()
@@ -307,7 +394,7 @@ namespace CoTuongOnline.Client
             }
         }
 
-        private void FormGame_Load(object sender, EventArgs e)
+        private void FormGame_Load(object? sender, EventArgs e)
         {
             _gameTimer.CountdownChanged += (seconds) =>
             {
@@ -347,9 +434,16 @@ namespace CoTuongOnline.Client
                         break;
                     case "surrender":
                         _chatBox.AppendLog("[Hệ thống] Bạn đã đầu hàng!", Color.OrangeRed);
+                        if (_isOnline && _connectionGuard?.Listener != null)
+                            _ = _connectionGuard.Listener.SendSurrenderAsync();
                         ShowGameResult(false);
                         break;
                     case "restart":
+                        if (_isOnline)
+                        {
+                            _chatBox.AppendLog("[Hệ thống] Không thể restart khi đang chơi Online!", Color.OrangeRed);
+                            break;
+                        }
                         ResetGame();
                         _chatBox.AppendLog("[Hệ thống] Đã reset game!", Color.DarkGreen);
                         break;
@@ -360,6 +454,20 @@ namespace CoTuongOnline.Client
             _gameTimer.StartGame();
         }
 
+        private void UpdateTimerLabelsAfterTurnChange()
+        {
+            if (_isRedTurn)
+            {
+                lblTimerBlack.Text = $"⚫ Đen: {GameTimer.TurnDurationSeconds}s";
+                lblTimerRed.Text = $"🔴 Đỏ: {GameTimer.TurnDurationSeconds}s";
+            }
+            else
+            {
+                lblTimerRed.Text = $"🔴 Đỏ: {GameTimer.TurnDurationSeconds}s";
+                lblTimerBlack.Text = $"⚫ Đen: {GameTimer.TurnDurationSeconds}s";
+            }
+        }
+
         private void SetStatus(string text, Color color)
         {
             txtStatus.Text = text;
@@ -368,16 +476,19 @@ namespace CoTuongOnline.Client
 
         private void RefreshStatus()
         {
+            bool underCheck = ChessRules.IsUnderCheck(_board, _isRedTurn);
+            string checkNotice = underCheck ? " ⚠️ [BỊ CHIẾU TƯỚNG!]" : "";
+
             if (_isOnline)
             {
                 bool myTurn = _isRedTurn == _isPlayerRed;
-                SetStatus(myTurn ? "✅ Đến lượt bạn" : "⏳ Đang chờ đối thủ...",
-                          myTurn ? Color.SeaGreen : Color.DimGray);
+                SetStatus(myTurn ? $"✅ Đến lượt bạn{checkNotice}" : "⏳ Đang chờ đối thủ...",
+                          myTurn ? (underCheck ? Color.Red : Color.SeaGreen) : Color.DimGray);
             }
             else
             {
-                SetStatus(_isRedTurn ? "🔴 Lượt Đỏ" : "⚫ Lượt Đen",
-                          _isRedTurn ? Color.DarkRed : Color.Black);
+                SetStatus(_isRedTurn ? $"🔴 Lượt Đỏ{checkNotice}" : $"⚫ Lượt Đen{checkNotice}",
+                          underCheck ? Color.Red : (_isRedTurn ? Color.DarkRed : Color.Black));
             }
         }
 
@@ -407,6 +518,11 @@ namespace CoTuongOnline.Client
 
         private void btnReplay_Click(object? sender, EventArgs e)
         {
+            if (_isOnline)
+            {
+                MessageBox.Show("Trận đấu online đang diễn ra. Nếu muốn nhận thua, hãy gõ /surrender!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
             ResetGame();
         }
 
@@ -420,7 +536,7 @@ namespace CoTuongOnline.Client
             _gameTimer.StopAll();
             FormResult f = new FormResult(isWin);
             f.ShowDialog();
-            if (f.IsReplay) ResetGame();
+            if (f.IsReplay && !_isOnline) ResetGame();
         }
 
         private void ResetGame()
@@ -429,6 +545,7 @@ namespace CoTuongOnline.Client
             _board.Init();
             _selectedCell = null;
             _validMoves.Clear();
+            _blockedMoves.Clear();
             _lastFrom = null;
             _lastTo = null;
             _isRedTurn = true;
@@ -449,7 +566,11 @@ namespace CoTuongOnline.Client
 
             _connectionGuard.StateChanged += (state) =>
             {
-                _chatBox.AppendLog($"[Kết nối] {state}", Color.Gray);
+                if (this.IsDisposed) return;
+                this.Invoke((Action)(() =>
+                {
+                    _chatBox.AppendLog($"[Kết nối] {state}", Color.Gray);
+                }));
             };
 
             await _connectionGuard.ConnectAsync(serverIp, port);
@@ -465,46 +586,74 @@ namespace CoTuongOnline.Client
 
             listener.OnGameStart += (isRed) =>
             {
-                _isPlayerRed = isRed;
-                _isOnline = true;
-                _isRedTurn = true;
+                if (this.IsDisposed) return;
+                this.Invoke((Action)(() =>
+                {
+                    _isPlayerRed = isRed;
+                    _isOnline = true;
+                    _isRedTurn = true;
 
-                _board = new Board();
-                _board.Init();
-                _selectedCell = null;
-                _validMoves.Clear();
-                _lastFrom = null;
-                _lastTo = null;
+                    _board = new Board();
+                    _board.Init();
+                    _selectedCell = null;
+                    _validMoves.Clear();
+                    _blockedMoves.Clear();
+                    _lastFrom = null;
+                    _lastTo = null;
 
-                string color = isRed ? "Đỏ (đi trước)" : "Đen (đi sau)";
-                _chatBox.AppendLog($"[Game] Bạn chơi quân {color}!", Color.DarkGreen);
-                RefreshStatus();
+                    string color = isRed ? "Đỏ (đi trước)" : "Đen (đi sau)";
+                    _chatBox.AppendLog($"[Game] Bạn chơi quân {color}!", Color.DarkGreen);
+                    RefreshStatus();
 
-                _gameTimer.StopAll();
-                _gameTimer.StartGame();
-                this.Invalidate();
+                    _gameTimer.StopAll();
+                    _gameTimer.StartGame();
+                    UpdateTimerLabelsAfterTurnChange();
+                    this.Invalidate();
+                }));
             };
 
-            listener.OnOpponentMove += HandleOpponentMove;
+            listener.OnOpponentMove += (fromRow, fromCol, toRow, toCol) =>
+            {
+                if (this.IsDisposed) return;
+                this.Invoke((Action)(() =>
+                {
+                    HandleOpponentMove(fromRow, fromCol, toRow, toCol);
+                }));
+            };
 
             listener.OnChatReceived += (msg) =>
             {
-                if (msg.StartsWith("[Hệ thống]") || msg.StartsWith("[Server]"))
-                    _chatBox.AppendLog(msg, Color.OrangeRed);
-                else
-                    _chatBox.AppendOpponentMessage(msg);
+                if (this.IsDisposed) return;
+                this.Invoke((Action)(() =>
+                {
+                    if (msg.StartsWith("[Hệ thống]") || msg.StartsWith("[Server]"))
+                        _chatBox.AppendLog(msg, Color.OrangeRed);
+                    else
+                        _chatBox.AppendOpponentMessage(msg);
+                }));
             };
 
             listener.OnOpponentSurrender += () =>
             {
-                _chatBox.AppendLog("[Game] Đối thủ đầu hàng! Bạn thắng!", Color.DarkGreen);
-                ShowGameResult(true);
+                if (this.IsDisposed) return;
+                this.Invoke((Action)(() =>
+                {
+                    _chatBox.AppendLog("[Game] Đối thủ đầu hàng! Bạn thắng!", Color.DarkGreen);
+                    ShowGameResult(true);
+                }));
             };
 
             listener.OnGameEnd += (reason) =>
             {
-                _chatBox.AppendLog($"[Game] {reason}", Color.OrangeRed);
-                _isOnline = false;
+                if (this.IsDisposed) return;
+                this.Invoke((Action)(() =>
+                {
+                    _chatBox.AppendLog($"[Game] {reason}", Color.OrangeRed);
+                    _isOnline = false;
+                    btnThachDau.Enabled = true;
+                    btnThachDau.Text = "Thách Đấu";
+                    RefreshStatus();
+                }));
             };
         }
 
@@ -526,11 +675,13 @@ namespace CoTuongOnline.Client
             _isRedTurn = !_isRedTurn;
             _gameTimer.StopCountdown();
             _gameTimer.StartTurn();
+            UpdateTimerLabelsAfterTurnChange();
 
             RefreshStatus();
 
             _selectedCell = null;
             _validMoves.Clear();
+            _blockedMoves.Clear();
 
             if (ChessRules.IsCheckmate(_board, _isRedTurn))
                 ShowGameResult(false);

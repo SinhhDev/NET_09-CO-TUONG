@@ -51,9 +51,22 @@ namespace CoTuongOnline.Common
         {
             if (grid[fromRow, fromCol] == null) { Console.WriteLine("Không có quân!"); return; }
             grid[toRow, toCol] = grid[fromRow, fromCol];
-            grid[toRow, toCol].Row = toRow;
-            grid[toRow, toCol].Col = toCol;
+            grid[toRow, toCol]!.Row = toRow;
+            grid[toRow, toCol]!.Col = toCol;
             grid[fromRow, fromCol] = null;
+        }
+
+        public Board Clone()
+        {
+            var clone = new Board();
+            for (int r = 0; r < 10; r++)
+                for (int c = 0; c < 9; c++)
+                {
+                    var p = grid[r, c];
+                    if (p != null)
+                        clone.grid[r, c] = new Piece(p.Type, p.IsRed, p.Row, p.Col);
+                }
+            return clone;
         }
     }
 }

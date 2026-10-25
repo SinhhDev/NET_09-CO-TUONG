@@ -28,6 +28,15 @@ namespace ChessServer
         {
             lock (_lock)
             {
+                // Kiểm tra xem người chơi đang chờ trước đó có còn kết nối hay đã thoát
+                if (_waitingClient != null && !IsClientConnected(_waitingClient))
+                {
+                    Logger.WriteLog("[ROOM] Client đang chờ đã mất kết nối, loại khỏi hàng đợi.");
+                    UserManager.Instance.Unregister(_waitingClient);
+                    try { _waitingClient.Close(); } catch { }
+                    _waitingClient = null;
+                }
+
                 if (_waitingClient == null)
                 {
                     // Chưa có ai chờ → cho vào hàng chờ
@@ -35,9 +44,7 @@ namespace ChessServer
                     UserManager.Instance.SetStatus(client, UserStatus.Waiting);
                     Logger.WriteLog($"[ROOM] Người chơi đang chờ đối thủ...");
 
-                    // QUAN TRỌNG: Dùng packet Chat để báo client.
-                    // Packet này sẽ được xử lý bởi client trước khi GameRoom bắt đầu,
-                    // nên KHÔNG bị relay sang đối thủ (GameRoom chưa chạy).
+                    // Dùng packet Chat để báo client
                     SendBytes(client, Protocol.CreateChat("Đang chờ đối thủ..."));
                 }
                 else
@@ -66,6 +73,20 @@ namespace ChessServer
                         }
                     });
                 }
+            }
+        }
+
+        private static bool IsClientConnected(TcpClient client)
+        {
+            try
+            {
+                if (!client.Connected || client.Client == null) return false;
+                // Kiểm tra trạng thái socket thực tế
+                return !(client.Client.Poll(1000, SelectMode.SelectRead) && client.Client.Available == 0);
+            }
+            catch
+            {
+                return false;
             }
         }
 
