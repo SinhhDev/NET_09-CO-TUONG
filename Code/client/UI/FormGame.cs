@@ -27,6 +27,7 @@ namespace CoTuongOnline.Client
         private ConnectionGuard? _connectionGuard;
         private bool _isOnline = false;
         private bool _isPlayerRed = true;
+        private string _myUsername = "Tôi";
 
         private GameTimer _gameTimer = new GameTimer();
 
@@ -63,42 +64,48 @@ namespace CoTuongOnline.Client
             Graphics g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-            g.FillRectangle(new SolidBrush(Color.FromArgb(255, 222, 173)),
-                            StartX, StartY, 8 * Cell, 9 * Cell);
-
-            Pen pen = new Pen(Color.Black, 2);
-            g.DrawRectangle(pen, StartX, StartY, 8 * Cell, 9 * Cell);
-
-            for (int i = 1; i < 9; i++)
-                g.DrawLine(pen, StartX, StartY + i * Cell, StartX + 8 * Cell, StartY + i * Cell);
-
-            for (int j = 0; j <= 8; j++)
+            using (var boardBrush = new SolidBrush(Color.FromArgb(255, 222, 173)))
             {
-                if (j == 0 || j == 8)
-                    g.DrawLine(pen, StartX + j * Cell, StartY, StartX + j * Cell, StartY + 9 * Cell);
-                else
-                {
-                    g.DrawLine(pen, StartX + j * Cell, StartY, StartX + j * Cell, StartY + 4 * Cell);
-                    g.DrawLine(pen, StartX + j * Cell, StartY + 5 * Cell, StartX + j * Cell, StartY + 9 * Cell);
-                }
+                g.FillRectangle(boardBrush, StartX, StartY, 8 * Cell, 9 * Cell);
             }
 
-            g.DrawLine(pen, StartX + 3 * Cell, StartY, StartX + 5 * Cell, StartY + 2 * Cell);
-            g.DrawLine(pen, StartX + 5 * Cell, StartY, StartX + 3 * Cell, StartY + 2 * Cell);
-            g.DrawLine(pen, StartX + 3 * Cell, StartY + 7 * Cell, StartX + 5 * Cell, StartY + 9 * Cell);
-            g.DrawLine(pen, StartX + 5 * Cell, StartY + 7 * Cell, StartX + 3 * Cell, StartY + 9 * Cell);
+            using (Pen pen = new Pen(Color.Black, 2))
+            {
+                g.DrawRectangle(pen, StartX, StartY, 8 * Cell, 9 * Cell);
 
-            int[][] marks = {
-                new[]{1,2}, new[]{7,2},
-                new[]{0,3}, new[]{2,3}, new[]{4,3}, new[]{6,3}, new[]{8,3},
-                new[]{1,7}, new[]{7,7},
-                new[]{0,6}, new[]{2,6}, new[]{4,6}, new[]{6,6}, new[]{8,6}
-            };
-            foreach (var m in marks) DrawMark(g, pen, m[0], m[1]);
+                for (int i = 1; i < 9; i++)
+                    g.DrawLine(pen, StartX, StartY + i * Cell, StartX + 8 * Cell, StartY + i * Cell);
 
-            Font fontRiver = new Font("SimSun", 24, FontStyle.Bold);
-            g.DrawString("楚河", fontRiver, Brushes.DarkRed, StartX + 1.4f * Cell, StartY + 4.15f * Cell);
-            g.DrawString("漢界", fontRiver, Brushes.DarkRed, StartX + 4.8f * Cell, StartY + 4.15f * Cell);
+                for (int j = 0; j <= 8; j++)
+                {
+                    if (j == 0 || j == 8)
+                        g.DrawLine(pen, StartX + j * Cell, StartY, StartX + j * Cell, StartY + 9 * Cell);
+                    else
+                    {
+                        g.DrawLine(pen, StartX + j * Cell, StartY, StartX + j * Cell, StartY + 4 * Cell);
+                        g.DrawLine(pen, StartX + j * Cell, StartY + 5 * Cell, StartX + j * Cell, StartY + 9 * Cell);
+                    }
+                }
+
+                g.DrawLine(pen, StartX + 3 * Cell, StartY, StartX + 5 * Cell, StartY + 2 * Cell);
+                g.DrawLine(pen, StartX + 5 * Cell, StartY, StartX + 3 * Cell, StartY + 2 * Cell);
+                g.DrawLine(pen, StartX + 3 * Cell, StartY + 7 * Cell, StartX + 5 * Cell, StartY + 9 * Cell);
+                g.DrawLine(pen, StartX + 5 * Cell, StartY + 7 * Cell, StartX + 3 * Cell, StartY + 9 * Cell);
+
+                int[][] marks = {
+                    new[]{1,2}, new[]{7,2},
+                    new[]{0,3}, new[]{2,3}, new[]{4,3}, new[]{6,3}, new[]{8,3},
+                    new[]{1,7}, new[]{7,7},
+                    new[]{0,6}, new[]{2,6}, new[]{4,6}, new[]{6,6}, new[]{8,6}
+                };
+                foreach (var m in marks) DrawMark(g, pen, m[0], m[1]);
+            }
+
+            using (Font fontRiver = new Font("SimSun", 24, FontStyle.Bold))
+            {
+                g.DrawString("楚河", fontRiver, Brushes.DarkRed, StartX + 1.4f * Cell, StartY + 4.15f * Cell);
+                g.DrawString("漢界", fontRiver, Brushes.DarkRed, StartX + 4.8f * Cell, StartY + 4.15f * Cell);
+            }
 
             using (var lastBrush = new SolidBrush(Color.FromArgb(110, 100, 180, 255)))
             {
@@ -107,7 +114,7 @@ namespace CoTuongOnline.Client
                         g.FillRectangle(lastBrush, StartX + c.Value.X * Cell - Cell / 2, StartY + c.Value.Y * Cell - Cell / 2, Cell, Cell);
             }
 
-            // [YÊU CẦU 1] Chiếu tướng: Hiện nền đỏ bao quanh quân Tướng bị chiếu
+            // Chiếu tướng: Hiện nền đỏ bao quanh quân Tướng bị chiếu
             foreach (bool isRed in new[] { true, false })
             {
                 if (ChessRules.IsUnderCheck(_board, isRed))
@@ -147,7 +154,7 @@ namespace CoTuongOnline.Client
                 }
             }
 
-            // [YÊU CẦU 2] Nước đi làm Tướng team mình bị chiếu đổi từ chấm xanh qua chấm đỏ (bị chặn)
+            // Nước đi làm Tướng team mình bị chiếu (bị chặn): chấm màu đỏ
             using (var blockedDotBrush = new SolidBrush(Color.FromArgb(230, 220, 20, 20)))
             using (var blockedBorderPen = new Pen(Color.DarkRed, 1.5f))
             {
@@ -171,7 +178,7 @@ namespace CoTuongOnline.Client
                     DrawPiece(g, key, col, row);
                 }
 
-            // Viền đỏ hình tròn bao quanh Tướng bị chiếu để làm nổi bật hơn nữa
+            // Viền đỏ hình tròn bao quanh Tướng bị chiếu
             using (var generalCirclePen = new Pen(Color.Red, 3f))
             {
                 foreach (bool isRed in new[] { true, false })
@@ -199,7 +206,7 @@ namespace CoTuongOnline.Client
                 }
             }
 
-            // Nước ăn quân nhưng bị chặn (khiến Tướng phe mình bị chiếu): vẽ vòng tròn và dấu chéo
+            // Nước ăn quân nhưng bị chặn: vẽ vòng tròn và dấu chéo
             using (var blockedRingPen = new Pen(Color.FromArgb(180, 160, 0, 0), 2.5f))
             using (var blockedCrossPen = new Pen(Color.Red, 2.5f))
             {
@@ -256,7 +263,6 @@ namespace CoTuongOnline.Client
                 return;
             }
 
-            // [YÊU CẦU 2] Nếu click vào ô bị chặn (chấm đỏ) -> Bị chặn, không cho đi
             Point targetPoint = new Point(col, row);
             if (_blockedMoves.Contains(targetPoint))
             {
@@ -277,6 +283,11 @@ namespace CoTuongOnline.Client
                 if (_isOnline && _connectionGuard?.Listener != null)
                     _ = _connectionGuard.Listener.SendMoveAsync(fromRow, fromCol, row, col);
 
+                if (!_isOnline && _gameTimer.State == TimerState.Stopped)
+                {
+                    _gameTimer.StartGame();
+                }
+
                 _isRedTurn = !_isRedTurn;
                 _gameTimer.StopCountdown();
                 _gameTimer.StartTurn();
@@ -289,7 +300,16 @@ namespace CoTuongOnline.Client
                 _blockedMoves.Clear();
 
                 if (ChessRules.IsCheckmate(_board, _isRedTurn))
-                    ShowGameResult(!_isRedTurn);
+                {
+                    _chatBox.AppendLog("[Game] Chiếu bí! Bạn đã chiến thắng!", Color.DarkGreen);
+                    if (_isOnline)
+                    {
+                        _isOnline = false;
+                        btnThachDau.Enabled = true;
+                        btnThachDau.Text = "Thách Đấu";
+                    }
+                    ShowGameResult(true);
+                }
             }
             else
             {
@@ -322,12 +342,10 @@ namespace CoTuongOnline.Client
                         sim.Move(row, col, r, c);
                         if (ChessRules.IsUnderCheck(sim, piece.IsRed))
                         {
-                            // Nước đi làm Tướng phe mình bị chiếu -> BỊ CHẶN (Chấm đỏ)
                             _blockedMoves.Add(new Point(c, r));
                         }
                         else
                         {
-                            // Nước đi hợp lệ (Chấm xanh hoặc Vòng đỏ ăn quân)
                             _validMoves.Add(new Point(c, r));
                         }
                     }
@@ -413,9 +431,27 @@ namespace CoTuongOnline.Client
                 if (this.IsDisposed) return;
                 this.Invoke((Action)(() =>
                 {
-                    string msg = _isRedTurn ? "🔴 Đỏ hết giờ! Đen thắng!" : "⚫ Đen hết giờ! Đỏ thắng!";
-                    MessageBox.Show(msg, "Hết Giờ");
-                    ShowGameResult(!_isRedTurn);
+                    if (_isOnline)
+                    {
+                        if (_isRedTurn == _isPlayerRed)
+                        {
+                            _chatBox.AppendLog("[Hệ thống] Bạn đã hết thời gian suy nghĩ! Bạn thua!", Color.OrangeRed);
+                            if (_connectionGuard?.Listener != null)
+                                _ = _connectionGuard.Listener.SendTimeoutAsync();
+
+                            _isOnline = false;
+                            btnThachDau.Enabled = true;
+                            btnThachDau.Text = "Thách Đấu";
+                            ShowGameResult(false);
+                            RefreshStatus();
+                        }
+                    }
+                    else
+                    {
+                        string msg = _isRedTurn ? "🔴 Đỏ hết giờ! Đen thắng!" : "⚫ Đen hết giờ! Đỏ thắng!";
+                        MessageBox.Show(msg, "Hết Giờ");
+                        ShowGameResult(!_isRedTurn);
+                    }
                 }));
             };
 
@@ -433,10 +469,23 @@ namespace CoTuongOnline.Client
                         Application.Exit();
                         break;
                     case "surrender":
-                        _chatBox.AppendLog("[Hệ thống] Bạn đã đầu hàng!", Color.OrangeRed);
-                        if (_isOnline && _connectionGuard?.Listener != null)
-                            _ = _connectionGuard.Listener.SendSurrenderAsync();
-                        ShowGameResult(false);
+                        if (_isOnline)
+                        {
+                            _chatBox.AppendLog("[Hệ thống] Bạn đã đầu hàng!", Color.OrangeRed);
+                            if (_connectionGuard?.Listener != null)
+                                _ = _connectionGuard.Listener.SendSurrenderAsync();
+
+                            _isOnline = false;
+                            btnThachDau.Enabled = true;
+                            btnThachDau.Text = "Thách Đấu";
+                            ShowGameResult(false);
+                            RefreshStatus();
+                        }
+                        else
+                        {
+                            _chatBox.AppendLog("[Hệ thống] Bạn đã đầu hàng ván cờ offline!", Color.OrangeRed);
+                            ShowGameResult(!_isRedTurn);
+                        }
                         break;
                     case "restart":
                         if (_isOnline)
@@ -450,8 +499,9 @@ namespace CoTuongOnline.Client
                 }
             };
 
+            lblTimerRed.Text = $"🔴 Đỏ: {GameTimer.TurnDurationSeconds}s";
+            lblTimerBlack.Text = $"⚫ Đen: {GameTimer.TurnDurationSeconds}s";
             RefreshStatus();
-            _gameTimer.StartGame();
         }
 
         private void UpdateTimerLabelsAfterTurnChange()
@@ -496,21 +546,25 @@ namespace CoTuongOnline.Client
         {
             if (_isOnline)
             {
-                MessageBox.Show("Bạn đã kết nối rồi!", "Thông báo");
+                MessageBox.Show("Bạn đang trong trận đấu online rồi!", "Thông báo");
                 return;
             }
-            string? serverIp = PromptServerIp();
-            if (string.IsNullOrEmpty(serverIp)) return;
+
+            var connInfo = PromptConnectionInfo();
+            if (connInfo == null) return;
+
             btnThachDau.Enabled = false;
             btnThachDau.Text = "Đang nối...";
+
             try
             {
-                await ConnectToServer(serverIp, 54000);
-                btnThachDau.Text = "Đã kết nối";
+                _myUsername = connInfo.Value.username;
+                this.Text = $"Cờ Tướng Online - Người chơi: {_myUsername}";
+                await ConnectToServer(connInfo.Value.serverIp, connInfo.Value.port, connInfo.Value.username);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Không thể kết nối: {ex.Message}", "Lỗi");
+                MessageBox.Show($"Không thể kết nối máy chủ: {ex.Message}", "Lỗi kết nối", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 btnThachDau.Enabled = true;
                 btnThachDau.Text = "Thách Đấu";
             }
@@ -524,6 +578,7 @@ namespace CoTuongOnline.Client
                 return;
             }
             ResetGame();
+            _gameTimer.StartGame();
         }
 
         private void btnThoat_Click(object? sender, EventArgs e)
@@ -536,7 +591,11 @@ namespace CoTuongOnline.Client
             _gameTimer.StopAll();
             FormResult f = new FormResult(isWin);
             f.ShowDialog();
-            if (f.IsReplay && !_isOnline) ResetGame();
+            if (f.IsReplay && !_isOnline)
+            {
+                ResetGame();
+                _gameTimer.StartGame();
+            }
         }
 
         private void ResetGame()
@@ -551,7 +610,6 @@ namespace CoTuongOnline.Client
             _isRedTurn = true;
 
             _gameTimer.StopAll();
-            _gameTimer.StartGame();
 
             lblTimerRed.Text = $"🔴 Đỏ: {GameTimer.TurnDurationSeconds}s";
             lblTimerBlack.Text = $"⚫ Đen: {GameTimer.TurnDurationSeconds}s";
@@ -560,8 +618,9 @@ namespace CoTuongOnline.Client
             this.Invalidate();
         }
 
-        private async Task ConnectToServer(string serverIp, int port)
+        private async Task ConnectToServer(string serverIp, int port, string username)
         {
+            _connectionGuard?.Dispose();
             _connectionGuard = new ConnectionGuard(this);
 
             _connectionGuard.StateChanged += (state) =>
@@ -573,10 +632,8 @@ namespace CoTuongOnline.Client
                 }));
             };
 
-            await _connectionGuard.ConnectAsync(serverIp, port);
             WireUpGameEvents();
-            _chatBox.AppendLog("[Kết nối] Đã kết nối! Đang chờ đối thủ...", Color.DarkGreen);
-            SetStatus("⏳ Đang chờ đối thủ...", Color.DimGray);
+            await _connectionGuard.ConnectAsync(serverIp, port, username);
         }
 
         private void WireUpGameEvents()
@@ -584,7 +641,32 @@ namespace CoTuongOnline.Client
             var listener = _connectionGuard?.Listener;
             if (listener == null) return;
 
-            listener.OnGameStart += (isRed) =>
+            listener.OnLoginOK += (msg) =>
+            {
+                if (this.IsDisposed) return;
+                this.Invoke((Action)(() =>
+                {
+                    btnThachDau.Text = "Đang chờ...";
+                    _chatBox.AppendLog($"[Server] {msg}", Color.DarkGreen);
+                    _chatBox.AppendLog("[Kết nối] Đang trong hàng chờ tìm đối thủ...", Color.Gray);
+                    SetStatus("⏳ Đang chờ đối thủ...", Color.DimGray);
+                }));
+            };
+
+            listener.OnLoginFail += (reason) =>
+            {
+                if (this.IsDisposed) return;
+                this.Invoke((Action)(() =>
+                {
+                    MessageBox.Show($"Đăng nhập không thành công: {reason}", "Lỗi Tên Đăng Nhập", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    _isOnline = false;
+                    btnThachDau.Enabled = true;
+                    btnThachDau.Text = "Thách Đấu";
+                    SetStatus("🔴 Chưa kết nối", Color.DimGray);
+                }));
+            };
+
+            listener.OnGameStart += (isRed, opponentName) =>
             {
                 if (this.IsDisposed) return;
                 this.Invoke((Action)(() =>
@@ -601,8 +683,10 @@ namespace CoTuongOnline.Client
                     _lastFrom = null;
                     _lastTo = null;
 
+                    _chatBox.OpponentName = opponentName;
                     string color = isRed ? "Đỏ (đi trước)" : "Đen (đi sau)";
-                    _chatBox.AppendLog($"[Game] Bạn chơi quân {color}!", Color.DarkGreen);
+                    _chatBox.AppendLog($"[Game] Đối thủ: {opponentName}. Bạn cầm quân {color}!", Color.DarkGreen);
+                    btnThachDau.Text = "Đang chơi";
                     RefreshStatus();
 
                     _gameTimer.StopAll();
@@ -638,8 +722,26 @@ namespace CoTuongOnline.Client
                 if (this.IsDisposed) return;
                 this.Invoke((Action)(() =>
                 {
-                    _chatBox.AppendLog("[Game] Đối thủ đầu hàng! Bạn thắng!", Color.DarkGreen);
+                    _chatBox.AppendLog($"[Game] {_chatBox.OpponentName} đã đầu hàng! Bạn thắng!", Color.DarkGreen);
+                    _isOnline = false;
+                    btnThachDau.Enabled = true;
+                    btnThachDau.Text = "Thách Đấu";
                     ShowGameResult(true);
+                    RefreshStatus();
+                }));
+            };
+
+            listener.OnOpponentTimeout += () =>
+            {
+                if (this.IsDisposed) return;
+                this.Invoke((Action)(() =>
+                {
+                    _chatBox.AppendLog($"[Game] {_chatBox.OpponentName} đã hết thời gian suy nghĩ! Bạn thắng!", Color.DarkGreen);
+                    _isOnline = false;
+                    btnThachDau.Enabled = true;
+                    btnThachDau.Text = "Thách Đấu";
+                    ShowGameResult(true);
+                    RefreshStatus();
                 }));
             };
 
@@ -652,6 +754,21 @@ namespace CoTuongOnline.Client
                     _isOnline = false;
                     btnThachDau.Enabled = true;
                     btnThachDau.Text = "Thách Đấu";
+                    _gameTimer.StopAll();
+                    RefreshStatus();
+                }));
+            };
+
+            listener.OnConnectionError += (ex) =>
+            {
+                if (this.IsDisposed) return;
+                this.Invoke((Action)(() =>
+                {
+                    _chatBox.AppendLog("[Mạng] Mất kết nối tới máy chủ!", Color.Red);
+                    _isOnline = false;
+                    btnThachDau.Enabled = true;
+                    btnThachDau.Text = "Thách Đấu";
+                    _gameTimer.StopAll();
                     RefreshStatus();
                 }));
             };
@@ -684,35 +801,80 @@ namespace CoTuongOnline.Client
             _blockedMoves.Clear();
 
             if (ChessRules.IsCheckmate(_board, _isRedTurn))
+            {
+                _chatBox.AppendLog("[Game] Chiếu bí! Bạn đã bị đánh bại!", Color.OrangeRed);
+                if (_isOnline)
+                {
+                    _isOnline = false;
+                    btnThachDau.Enabled = true;
+                    btnThachDau.Text = "Thách Đấu";
+                }
                 ShowGameResult(false);
+            }
 
             this.Invalidate();
         }
 
-        private static string? PromptServerIp()
+        private static (string serverIp, int port, string username)? PromptConnectionInfo()
         {
             using var dialog = new Form();
-            dialog.Text = "Kết nối Server";
-            dialog.Size = new Size(320, 160);
+            dialog.Text = "Kết nối Server Cờ Tướng";
+            dialog.Size = new Size(360, 240);
             dialog.StartPosition = FormStartPosition.CenterParent;
             dialog.FormBorderStyle = FormBorderStyle.FixedDialog;
             dialog.MaximizeBox = false;
             dialog.MinimizeBox = false;
 
-            var label = new Label { Text = "Nhập IP server:", Location = new Point(15, 15), AutoSize = true };
-            var textBox = new TextBox { Text = "127.0.0.1", Location = new Point(15, 40), Size = new Size(270, 25) };
+            var lblIp = new Label { Text = "Địa chỉ IP Server:", Location = new Point(20, 15), AutoSize = true };
+            var txtIp = new TextBox { Text = "127.0.0.1", Location = new Point(20, 35), Size = new Size(200, 25) };
+
+            var lblPort = new Label { Text = "Cổng (Port):", Location = new Point(230, 15), AutoSize = true };
+            var txtPort = new TextBox { Text = "54000", Location = new Point(230, 35), Size = new Size(90, 25) };
+
+            var lblUser = new Label { Text = "Tên người chơi (3 - 20 ký tự):", Location = new Point(20, 75), AutoSize = true };
+            string randomDefaultName = "KyThu_" + new Random().Next(100, 999);
+            var txtUser = new TextBox { Text = randomDefaultName, Location = new Point(20, 95), Size = new Size(300, 25) };
+
             var btnOk = new Button
             {
-                Text = "Kết nối",
+                Text = "Vào Trận",
                 DialogResult = DialogResult.OK,
-                Location = new Point(110, 75),
-                Size = new Size(90, 32)
+                Location = new Point(60, 145),
+                Size = new Size(110, 35),
+                BackColor = Color.SteelBlue,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat
             };
 
-            dialog.Controls.AddRange(new Control[] { label, textBox, btnOk });
-            dialog.AcceptButton = btnOk;
+            var btnCancel = new Button
+            {
+                Text = "Hủy Bỏ",
+                DialogResult = DialogResult.Cancel,
+                Location = new Point(190, 145),
+                Size = new Size(110, 35),
+                FlatStyle = FlatStyle.Flat
+            };
 
-            return dialog.ShowDialog() == DialogResult.OK ? textBox.Text.Trim() : null;
+            dialog.Controls.AddRange(new Control[] { lblIp, txtIp, lblPort, txtPort, lblUser, txtUser, btnOk, btnCancel });
+            dialog.AcceptButton = btnOk;
+            dialog.CancelButton = btnCancel;
+
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                string ip = txtIp.Text.Trim();
+                if (string.IsNullOrEmpty(ip)) ip = "127.0.0.1";
+
+                if (!int.TryParse(txtPort.Text.Trim(), out int port) || port <= 0 || port > 65535)
+                    port = 54000;
+
+                string user = txtUser.Text.Trim();
+                if (string.IsNullOrEmpty(user))
+                    user = randomDefaultName;
+
+                return (ip, port, user);
+            }
+
+            return null;
         }
     }
 }

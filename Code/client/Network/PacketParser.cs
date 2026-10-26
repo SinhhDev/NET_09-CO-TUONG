@@ -94,16 +94,26 @@ namespace CoTuongOnline.Client
         }
 
         /// <summary>
-        /// Parse dữ liệu GameStart: "RED" hoặc "BLACK".
+        /// Parse dữ liệu GameStart: "RED|OpponentName" hoặc "BLACK|OpponentName".
         /// </summary>
-        public static bool ParseGameStart(string data, out bool isRed)
+        public static bool ParseGameStart(string data, out bool isRed, out string opponentName)
         {
-            // Server gửi "START|RED" hoặc "START|BLACK"
             isRed = false;
+            opponentName = "Đối thủ";
             if (string.IsNullOrEmpty(data)) return false;
 
-            string color = data.Contains("|") ? data.Split('|')[1] : data;
-            color = color.Trim().ToUpper();
+            string[] parts = data.Split('|');
+            string color = parts[0].Trim().ToUpper();
+
+            if (color == "START" && parts.Length > 1)
+            {
+                color = parts[1].Trim().ToUpper();
+                if (parts.Length > 2) opponentName = parts[2].Trim();
+            }
+            else if (parts.Length > 1)
+            {
+                opponentName = parts[1].Trim();
+            }
 
             if (color == "RED")
             {
@@ -117,6 +127,11 @@ namespace CoTuongOnline.Client
             }
 
             return false;
+        }
+
+        public static bool ParseGameStart(string data, out bool isRed)
+        {
+            return ParseGameStart(data, out isRed, out _);
         }
 
         /// <summary>

@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using CoTuongOnline.Network;
 
 namespace CoTuongOnline.Client
@@ -10,11 +9,15 @@ namespace CoTuongOnline.Client
         private readonly SocketClient _socketClient;
         private readonly PacketParser _packetParser;
 
-        public event Action<bool>? OnGameStart;
+        public event Action<bool, string>? OnGameStart;
         public event Action<int, int, int, int>? OnOpponentMove;
         public event Action<string>? OnChatReceived;
         public event Action? OnOpponentSurrender;
+        public event Action? OnOpponentTimeout;
         public event Action<string>? OnGameEnd;
+        public event Action<Exception>? OnConnectionError;
+        public event Action<string>? OnLoginOK;
+        public event Action<string>? OnLoginFail;
 
         public ClientEventListener()
         {
@@ -22,6 +25,7 @@ namespace CoTuongOnline.Client
             _packetParser = new PacketParser();
 
             _socketClient.DataReceived += _packetParser.ReceiveData;
+            _socketClient.ConnectionError += (ex) => OnConnectionError?.Invoke(ex);
             _packetParser.OnPacketParsed += HandlePacket;
         }
 
@@ -35,9 +39,17 @@ namespace CoTuongOnline.Client
         {
             switch (type)
             {
+                case PacketType.LoginOK:
+                    OnLoginOK?.Invoke(data);
+                    break;
+
+                case PacketType.LoginFail:
+                    OnLoginFail?.Invoke(data);
+                    break;
+
                 case PacketType.GameStart:
-                    if (PacketParser.ParseGameStart(data, out bool isRed))
-                        OnGameStart?.Invoke(isRed);
+                    if (PacketParser.ParseGameStart(data, out bool isRed, out string opponentName))
+                        OnGameStart?.Invoke(isRed, opponentName);
                     break;
 
                 case PacketType.Move:
@@ -54,10 +66,20 @@ namespace CoTuongOnline.Client
                     OnOpponentSurrender?.Invoke();
                     break;
 
+                case PacketType.Timeout:
+                    OnOpponentTimeout?.Invoke();
+                    break;
+
                 case PacketType.GameEnd:
                     OnGameEnd?.Invoke(data);
                     break;
             }
+        }
+
+        public Task SendLoginAsync(string username)
+        {
+            byte[] packet = Protocol.CreateLogin(username);
+            return _socketClient.SendAsync(packet);
         }
 
         public Task SendMoveAsync(int fromRow, int fromCol, int toRow, int toCol)
@@ -75,6 +97,12 @@ namespace CoTuongOnline.Client
         public Task SendSurrenderAsync()
         {
             byte[] packet = Protocol.CreateSurrender();
+            return _socketClient.SendAsync(packet);
+        }
+
+        public Task SendTimeoutAsync()
+        {
+            byte[] packet = Protocol.CreateTimeout();
             return _socketClient.SendAsync(packet);
         }
 

@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -9,6 +10,14 @@ namespace CoTuongOnline.Client
         private RichTextBox _rtbMessages = null!;
         private TextBox _txtInput = null!;
         private Button _btnSend = null!;
+        private string _opponentName = "Đối thủ";
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string OpponentName
+        {
+            get => _opponentName;
+            set => _opponentName = string.IsNullOrWhiteSpace(value) ? "Đối thủ" : value;
+        }
 
         public event Action<string>? OnChatMessage;
         public event Action<string, string?>? OnCommand;
@@ -105,7 +114,7 @@ namespace CoTuongOnline.Client
 
         public void AppendOpponentMessage(string message)
         {
-            AppendLog($"[Đối thủ] {message}", Color.DarkViolet);
+            AppendLog($"[{_opponentName}] {message}", Color.DarkViolet);
         }
     }
 }

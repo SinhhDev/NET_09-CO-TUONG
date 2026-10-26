@@ -16,11 +16,17 @@ namespace CoTuongOnline.Client
             Listener = new ClientEventListener();
         }
 
-        public async Task ConnectAsync(string serverIp, int port)
+        public async Task ConnectAsync(string serverIp, int port, string? username = null)
         {
             StateChanged?.Invoke($"Đang kết nối đến {serverIp}:{port}...");
             await Listener.ConnectAsync(serverIp, port);
-            StateChanged?.Invoke("Kết nối thành công!");
+            StateChanged?.Invoke("Kết nối mạng thành công!");
+
+            if (!string.IsNullOrWhiteSpace(username))
+            {
+                StateChanged?.Invoke($"Đang đăng nhập với tên '{username}'...");
+                await Listener.SendLoginAsync(username);
+            }
         }
 
         public void Dispose()

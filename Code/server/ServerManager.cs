@@ -31,8 +31,8 @@ namespace ChessServer
                     // Đăng ký người chơi vào UserManager để theo dõi danh sách Online
                     UserManager.Instance.Register(incomingClient);
 
-                    // Đưa client vào RoomManager để ghép cặp (chạy trên luồng riêng bên trong)
-                    RoomManager.Instance.HandleNewClient(incomingClient);
+                    // Đưa client vào RoomManager để xác thực đăng nhập & ghép cặp
+                    _ = RoomManager.Instance.HandleNewClientAsync(incomingClient);
                 }
                 catch (SocketException ex)
                 {
