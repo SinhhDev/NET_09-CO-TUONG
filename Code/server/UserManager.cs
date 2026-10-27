@@ -21,20 +21,12 @@ namespace ChessServer
         public string Username { get; set; } = string.Empty;
         public TcpClient Client { get; set; } = null!;
         public string EndPoint { get; set; } = string.Empty;
-        public DateTime ConnectedAt { get; set; } = DateTime.Now;
-        public DateTime LastActiveAt { get; set; } = DateTime.Now;
         public UserStatus Status { get; set; } = UserStatus.Online;
         public string? CurrentRoomId { get; set; }
-
-        public override string ToString()
-        {
-            return $"[{Username}] ({EndPoint}) - {Status}" + (CurrentRoomId != null ? $" - Room: {CurrentRoomId}" : "");
-        }
     }
 
     /// <summary>
     /// Quản lý người dùng: Đăng ký, đăng nhập, theo dõi trạng thái và danh sách online
-    /// (Nhiệm vụ: Trần Thế Hiển - Tuần 3)
     /// </summary>
     public class UserManager
     {
@@ -89,8 +81,6 @@ namespace ChessServer
                     Username = username,
                     Client = client,
                     EndPoint = endPoint,
-                    ConnectedAt = DateTime.Now,
-                    LastActiveAt = DateTime.Now,
                     Status = UserStatus.Online
                 };
 
@@ -126,7 +116,6 @@ namespace ChessServer
 
                 string oldName = user.Username;
                 user.Username = newUsername;
-                user.LastActiveAt = DateTime.Now;
                 errorMessage = string.Empty;
 
                 Logger.WriteLog($"[USER] Người chơi '{oldName}' đổi tên thành '{user.Username}'.");
@@ -160,21 +149,8 @@ namespace ChessServer
                 {
                     user.Status = status;
                     user.CurrentRoomId = roomId;
-                    user.LastActiveAt = DateTime.Now;
                     Logger.WriteLog($"[USER] Cập nhật trạng thái '{user.Username}': {status}" + (roomId != null ? $" (Phòng #{roomId})" : ""));
                 }
-            }
-        }
-
-        /// <summary>
-        /// Cập nhật thời điểm hoạt động gần nhất
-        /// </summary>
-        public void UpdateActivity(TcpClient client)
-        {
-            lock (_lock)
-            {
-                if (_users.TryGetValue(client, out var user))
-                    user.LastActiveAt = DateTime.Now;
             }
         }
 
@@ -190,43 +166,49 @@ namespace ChessServer
             }
         }
 
-        /// <summary>
-        /// Tìm người dùng theo Username
-        /// </summary>
-        public UserInfo? GetUserByName(string username)
+        public static bool IsClientConnected(TcpClient client)
         {
-            lock (_lock)
+            try
             {
-                foreach (var user in _users.Values)
-                {
-                    if (string.Equals(user.Username, username, StringComparison.OrdinalIgnoreCase))
-                        return user;
-                }
-                return null;
+                if (client == null || !client.Connected || client.Client == null) return false;
+                return !(client.Client.Poll(1000, SelectMode.SelectRead) && client.Client.Available == 0);
             }
-        }
-
-        /// <summary>
-        /// Kiểm tra tên đăng nhập đã được sử dụng hay chưa
-        /// </summary>
-        public bool IsUsernameTaken(string username, TcpClient? excludeClient = null)
-        {
-            lock (_lock)
+            catch
             {
-                return IsUsernameTakenInternal(username, excludeClient);
+                return false;
             }
         }
 
         private bool IsUsernameTakenInternal(string username, TcpClient? excludeClient = null)
         {
+            List<TcpClient>? staleClients = null;
             foreach (var pair in _users)
             {
                 if (excludeClient != null && ReferenceEquals(pair.Key, excludeClient))
                     continue;
 
                 if (string.Equals(pair.Value.Username, username, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Nếu client cũ đã mất kết nối thì đánh dấu để giải phóng, cho phép dùng lại tên
+                    if (!IsClientConnected(pair.Key))
+                    {
+                        staleClients ??= new List<TcpClient>();
+                        staleClients.Add(pair.Key);
+                        continue;
+                    }
                     return true;
+                }
             }
+
+            if (staleClients != null)
+            {
+                foreach (var stale in staleClients)
+                {
+                    _users.Remove(stale);
+                    try { stale.Close(); } catch { }
+                }
+            }
+
             return false;
         }
 
@@ -258,28 +240,6 @@ namespace ChessServer
 
             error = string.Empty;
             return true;
-        }
-
-        /// <summary>
-        /// Số lượng người dùng đang online
-        /// </summary>
-        public int GetOnlineCount()
-        {
-            lock (_lock)
-            {
-                return _users.Count;
-            }
-        }
-
-        /// <summary>
-        /// Danh sách toàn bộ người dùng đang online
-        /// </summary>
-        public List<UserInfo> GetOnlineUsers()
-        {
-            lock (_lock)
-            {
-                return new List<UserInfo>(_users.Values);
-            }
         }
 
         private static string GetEndPointString(TcpClient client)

@@ -85,7 +85,8 @@ namespace ChessServer
             if (text.StartsWith("[Hệ thống]", StringComparison.OrdinalIgnoreCase) ||
                 text.StartsWith("[Server]", StringComparison.OrdinalIgnoreCase))
             {
-                text = text.Replace("[Hệ thống]", "").Replace("[Server]", "").Trim();
+                text = text.Replace("[Hệ thống]", "", StringComparison.OrdinalIgnoreCase)
+                           .Replace("[Server]", "", StringComparison.OrdinalIgnoreCase).Trim();
                 if (string.IsNullOrEmpty(text))
                     return (false, null, string.Empty);
             }

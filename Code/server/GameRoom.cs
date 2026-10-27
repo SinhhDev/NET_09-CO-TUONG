@@ -3,13 +3,14 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using CoTuongOnline.Common;
 using CoTuongOnline.Network;
 
 namespace ChessServer
 {
     /// <summary>
     /// 1 phòng chơi = 2 người chơi
-    /// Nhận nước đi từ người này → gửi sang người kia
+    /// Authoritative Server: Kiểm tra tính hợp lệ của từng nước đi theo luật cờ trước khi chuyển tiếp
     /// </summary>
     public class GameRoom
     {
@@ -20,6 +21,11 @@ namespace ChessServer
         private readonly string _roomId;
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
         private int _gameEnded = 0; // 0: running, 1: ended
+
+        // Authoritative Game State trên Server
+        private readonly Board _board = new Board();
+        private bool _isRedTurn = true;
+        private readonly object _gameLock = new object();
 
         public string RoomId => _roomId;
         public string Player1Name => _player1Name;
@@ -34,6 +40,7 @@ namespace ChessServer
             _player1Name = player1Name;
             _player2Name = player2Name;
             _roomId = Guid.NewGuid().ToString()[..8];
+            _board.Init();
         }
 
         public async Task StartAsync()
@@ -54,7 +61,7 @@ namespace ChessServer
         }
 
         /// <summary>
-        /// Lắng nghe bất đồng bộ từ sender → chuyển tiếp sang receiver
+        /// Lắng nghe bất đồng bộ từ sender → xác thực nước cờ → chuyển tiếp sang receiver
         /// </summary>
         private async Task ListenFromAsync(TcpClient sender, TcpClient receiver, string role, string senderName, CancellationToken ct)
         {
@@ -79,11 +86,11 @@ namespace ChessServer
                     }
 
                     byte packetType = headerBuf[0];
-                    int payloadLen = BitConverter.ToInt32(headerBuf, 1);
+                    int payloadLen = Protocol.ReadPayloadLength(headerBuf);
 
                     if (payloadLen < 0 || payloadLen > 65536)
                     {
-                        Logger.WriteLog($"[ROOM {_roomId}] {role} ({senderName}): payload length không hợp lệ ({payloadLen}), bỏ qua.");
+                        Logger.WriteLog($"[ROOM {_roomId}] {role} ({senderName}): payload length không hợp lệ ({payloadLen}), ngắt kết nối.");
                         return;
                     }
 
@@ -101,7 +108,7 @@ namespace ChessServer
                         payloadRead += read;
                     }
 
-                    // ── Bước 3: Ghi log và relay sang đối thủ ────────────────
+                    // ── Bước 3: Ghi log và xử lý nghiệp vụ theo loại gói tin ────────────────
                     Logger.WriteLog($"[ROOM {_roomId}] {role} ({senderName}): packet type={(PacketType)packetType}, len={payloadLen}");
 
                     // Nếu là packet Chat (33) -> Xử lý qua ChatHandler
@@ -112,6 +119,48 @@ namespace ChessServer
                         continue;
                     }
 
+                    // Nếu là packet Move (31) -> Kiểm tra tính hợp lệ trên Server (Authoritative Validation)
+                    if (packetType == (byte)PacketType.Move)
+                    {
+                        string moveData = Encoding.UTF8.GetString(payloadBuf);
+                        var move = Protocol.ParseMove(moveData);
+                        if (move == null)
+                        {
+                            Logger.WriteLog($"[ROOM {_roomId}] {role} ({senderName}): Nước đi sai định dạng: '{moveData}'");
+                            continue;
+                        }
+
+                        bool isSenderRed = (role == "Đỏ");
+                        lock (_gameLock)
+                        {
+                            // 1. Kiểm tra có đúng lượt người chơi hay không
+                            if (isSenderRed != _isRedTurn)
+                            {
+                                Logger.WriteLog($"[ROOM {_roomId}] [CẢNH BÁO] {role} ({senderName}): Đi sai lượt!");
+                                RoomManager.SendBytes(sender, Protocol.CreateChat("[Hệ thống] Chưa đến lượt của bạn!"));
+                                continue;
+                            }
+
+                            // 2. Kiểm tra nước đi hợp lệ theo luật cờ trên Server
+                            bool isValidMove = MoveValidator.TryMove(_board, move.Value.fromRow, move.Value.fromCol, move.Value.toRow, move.Value.toCol, _isRedTurn);
+                            if (!isValidMove)
+                            {
+                                Logger.WriteLog($"[ROOM {_roomId}] [CẢNH BÁO] {role} ({senderName}): Nước đi không hợp lệ theo luật cờ ({moveData})!");
+                                RoomManager.SendBytes(sender, Protocol.CreateChat("[Hệ thống] Nước đi không hợp lệ hoặc phạm luật cờ!"));
+                                continue;
+                            }
+
+                            // Hợp lệ -> Đổi lượt
+                            _isRedTurn = !_isRedTurn;
+
+                            // Kiểm tra xem đối phương có bị chiếu bí không
+                            if (ChessRules.IsCheckmate(_board, _isRedTurn))
+                            {
+                                Logger.WriteLog($"[ROOM {_roomId}] {role} ({senderName}) đã CHIẾU BÍ đối thủ!");
+                            }
+                        }
+                    }
+
                     // Ghép lại packet gốc và gửi sang đối thủ
                     byte[] fullPacket = new byte[HEADER_SIZE + payloadLen];
                     Array.Copy(headerBuf, fullPacket, HEADER_SIZE);
@@ -119,16 +168,40 @@ namespace ChessServer
 
                     RoomManager.SendBytes(receiver, fullPacket);
 
-                    // Nếu là packet Surrender (32) hoặc Timeout (34) → Ván cờ kết thúc bình thường
-                    if (packetType == (byte)PacketType.Surrender || packetType == (byte)PacketType.Timeout)
+                    // Nếu là packet Surrender (32), Timeout (34) hoặc GameEnd (60 - Chiếu bí / Kết thúc trận)
+                    if (packetType == (byte)PacketType.Surrender || packetType == (byte)PacketType.Timeout || packetType == (byte)PacketType.GameEnd)
                     {
-                        string endReason = packetType == (byte)PacketType.Surrender ? "đầu hàng" : "hết giờ suy nghĩ";
+                        string endReason = packetType switch
+                        {
+                            (byte)PacketType.Surrender => "đầu hàng",
+                            (byte)PacketType.Timeout => "hết giờ suy nghĩ",
+                            _ => "ván cờ kết thúc (chiếu bí)"
+                        };
                         Logger.WriteLog($"[ROOM {_roomId}] {role} ({senderName}) {endReason}.");
+
                         if (Interlocked.Exchange(ref _gameEnded, 1) == 0)
                         {
+                            // Đợi ngắn để receiver kịp nhận trọn vẹn gói tin trước khi đóng token
+                            await Task.Delay(400);
                             _cts.Cancel();
                         }
                         return;
+                    }
+
+                    // Nếu đối thủ chấp nhận hòa cờ
+                    if (packetType == (byte)PacketType.DrawResponse)
+                    {
+                        string responseText = Encoding.UTF8.GetString(payloadBuf);
+                        if (responseText.Equals("ACCEPT", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Logger.WriteLog($"[ROOM {_roomId}] {role} ({senderName}) đã chấp nhận hòa cờ.");
+                            if (Interlocked.Exchange(ref _gameEnded, 1) == 0)
+                            {
+                                await Task.Delay(400);
+                                _cts.Cancel();
+                            }
+                            return;
+                        }
                     }
                 }
             }
@@ -145,9 +218,10 @@ namespace ChessServer
                 // Nếu ván kết thúc bất ngờ (mất kết nối hoặc thoát đột ngột mà chưa cờ gameEnded)
                 if (Interlocked.Exchange(ref _gameEnded, 1) == 0)
                 {
-                    _cts.Cancel();
                     Logger.WriteLog($"[ROOM {_roomId}] {role} ({senderName}) mất kết nối, thông báo đối thủ.");
                     RoomManager.SendBytes(receiver, Protocol.CreateGameEnd("Đối thủ đã mất kết nối hoặc rời khỏi phòng."));
+                    try { await Task.Delay(300); } catch { }
+                    _cts.Cancel();
                 }
 
                 ChatHandler.Instance.RemoveClient(sender);

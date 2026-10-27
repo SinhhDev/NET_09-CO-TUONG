@@ -34,7 +34,7 @@ namespace ChessServer
                 // Đợi đọc packet Login với thời gian chờ tối đa 4 giây
                 byte[] headerBuf = await ReadExactBytesAsync(stream, Protocol.HEADER_SIZE, 4000);
                 PacketType packetType = (PacketType)headerBuf[0];
-                int payloadLen = BitConverter.ToInt32(headerBuf, 1);
+                int payloadLen = Protocol.ReadPayloadLength(headerBuf);
 
                 if (packetType == PacketType.Login && payloadLen > 0 && payloadLen <= 100)
                 {
@@ -49,6 +49,7 @@ namespace ChessServer
                     else
                     {
                         SendBytes(client, Protocol.CreateLoginFail(errorMessage));
+                        await Task.Delay(200); // Đợi buffer mạng kịp truyền gói tin đến Client trước khi ngắt kết nối
                         UserManager.Instance.Unregister(client);
                         try { client.Close(); } catch { }
                     }
@@ -154,28 +155,27 @@ namespace ChessServer
             }
         }
 
-        private static bool IsClientConnected(TcpClient client)
-        {
-            try
-            {
-                if (client == null || !client.Connected || client.Client == null) return false;
-                return !(client.Client.Poll(1000, SelectMode.SelectRead) && client.Client.Available == 0);
-            }
-            catch
-            {
-                return false;
-            }
-        }
+        private static bool IsClientConnected(TcpClient client) => UserManager.IsClientConnected(client);
 
         public static void SendBytes(TcpClient client, byte[] data)
         {
             try
             {
-                if (client == null || !client.Connected) return;
+                if (client == null || !client.Connected || client.Client == null) return;
                 lock (client)
                 {
-                    client.GetStream().Write(data, 0, data.Length);
+                    NetworkStream stream = client.GetStream();
+                    stream.Write(data, 0, data.Length);
+                    stream.Flush();
                 }
+            }
+            catch (ObjectDisposedException)
+            {
+                // Bỏ qua ngoại lệ khi socket đã bị đóng bình thường trong lúc kết thúc phòng
+            }
+            catch (IOException)
+            {
+                // Bỏ qua ngoại lệ khi kết nối mạng bị đối phương đóng đột ngột
             }
             catch (Exception ex)
             {
