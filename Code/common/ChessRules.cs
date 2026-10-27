@@ -95,9 +95,20 @@ namespace CoTuongOnline.Common
 
                                 if (MoveValidator.IsValidMove(board, p, r, c, tr, tc))
                                 {
-                                    Board sim = board.Clone();
-                                    sim.Move(r, c, tr, tc);
-                                    if (!IsUnderCheck(sim, isRedTurn))
+                                    // Thử di chuyển tạm thời trên bàn cờ thay vì Clone() để tránh cấp phát bộ nhớ liên tục
+                                    board.grid[tr, tc] = p;
+                                    board.grid[r, c] = null;
+                                    int oldR = p.Row, oldC = p.Col;
+                                    p.Row = tr; p.Col = tc;
+
+                                    bool underCheck = IsUnderCheck(board, isRedTurn);
+
+                                    // Hoàn tác lại vị trí ban đầu
+                                    board.grid[r, c] = p;
+                                    board.grid[tr, tc] = target;
+                                    p.Row = oldR; p.Col = oldC;
+
+                                    if (!underCheck)
                                     {
                                         return false; // Còn ít nhất 1 nước đi thoát chiếu -> Chưa chiếu bí
                                     }

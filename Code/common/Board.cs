@@ -36,37 +36,5 @@ namespace CoTuongOnline.Common
             for (int i = 0; i < 9; i += 2)
                 grid[6, i] = new Piece(PieceType.Soldier, true, 6, i);
         }
-
-        public void PrintBoard()
-        {
-            for (int i = 0; i < 10; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                    Console.Write(grid[i, j] == null ? " . " : " X ");
-                Console.WriteLine();
-            }
-        }
-
-        public void Move(int fromRow, int fromCol, int toRow, int toCol)
-        {
-            if (grid[fromRow, fromCol] == null) { Console.WriteLine("Không có quân!"); return; }
-            grid[toRow, toCol] = grid[fromRow, fromCol];
-            grid[toRow, toCol]!.Row = toRow;
-            grid[toRow, toCol]!.Col = toCol;
-            grid[fromRow, fromCol] = null;
-        }
-
-        public Board Clone()
-        {
-            var clone = new Board();
-            for (int r = 0; r < 10; r++)
-                for (int c = 0; c < 9; c++)
-                {
-                    var p = grid[r, c];
-                    if (p != null)
-                        clone.grid[r, c] = new Piece(p.Type, p.IsRed, p.Row, p.Col);
-                }
-            return clone;
-        }
     }
 }

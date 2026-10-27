@@ -22,17 +22,32 @@ namespace CoTuongOnline.Common
                 return false;
 
             // Kiểm tra nước đi có khiến Tướng phe mình bị chiếu không (nước đi tự sát / bị chặn)
-            Board sim = board.Clone();
-            sim.Move(fromRow, fromCol, toRow, toCol);
-            if (ChessRules.IsUnderCheck(sim, isRedTurn))
-                return false;
+            // Thử nghiệm di chuyển trực tiếp trên bàn cờ thay vì Clone() để tối ưu bộ nhớ
+            Piece? originalTarget = board.grid[toRow, toCol];
+            board.grid[toRow, toCol] = piece;
+            board.grid[fromRow, fromCol] = null;
+            piece.Row = toRow;
+            piece.Col = toCol;
 
-            board.Move(fromRow, fromCol, toRow, toCol);
+            bool isSelfCheck = ChessRules.IsUnderCheck(board, isRedTurn);
+
+            if (isSelfCheck)
+            {
+                // Hoàn tác nếu nước đi khiến Tướng phe mình bị chiếu
+                board.grid[fromRow, fromCol] = piece;
+                board.grid[toRow, toCol] = originalTarget;
+                piece.Row = fromRow;
+                piece.Col = fromCol;
+                return false;
+            }
+
             return true;
         }
 
         public static bool IsValidMove(Board board, Piece piece, int fromRow, int fromCol, int toRow, int toCol)
         {
+            if (fromRow == toRow && fromCol == toCol) return false;
+
             int dRow = toRow - fromRow;
             int dCol = toCol - fromCol;
             int absRow = Math.Abs(dRow);
