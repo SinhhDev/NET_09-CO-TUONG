@@ -200,6 +200,7 @@ NET_09-CO-TUONG/
 │       ├── Logger.cs                   # Hệ thống ghi log console và file
 │       ├── Program.cs                  # Entry point của Server
 │       ├── RoomManager.cs              # Quản lý hàng chờ và ghép cặp phòng
+│       ├── ServerManager.cs            # Quản lý TcpListener, mở cổng lắng nghe kết nối
 │       ├── UserManager.cs              # Quản lý danh sách người dùng Online
 │       └── server.csproj               # Cấu hình dự án Server (net10.0)
 ├── DOCX/                               
