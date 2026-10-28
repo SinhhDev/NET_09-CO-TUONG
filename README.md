@@ -1,7 +1,7 @@
 # NET_09_CO-TUONG — GAME CỜ TƯỚNG TRỰC TUYẾN
 
 > **Trường Đại học Giao Thông Vận Tải TP. Hồ Chí Minh (UTH)**   
-> **ĐỒ ÁN MÔN HỌC: LẬP TRÌNH ỨNG DỤNG MẠNG**  
+> **ĐỒ ÁN MÔN HỌC: LẬP TRÌNH MẠNG**  
 > **Lớp học phần:** `012012301303`  
 
 ---
