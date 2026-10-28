@@ -7,17 +7,27 @@ namespace CoTuongOnline.Client
 {
     public static class SoundManager
     {
-        private static readonly string basePath = Path.Combine(Application.StartupPath, "Sounds");
+        private static readonly SoundPlayer? _movePlayer;
+        private static readonly SoundPlayer? _capturePlayer;
 
-        public static void PlayMove()
+        static SoundManager()
         {
+            string basePath = Path.Combine(Application.StartupPath, "Sounds");
+
             try
             {
-                string path = Path.Combine(basePath, "move.wav");
-                if (File.Exists(path))
+                string movePath = Path.Combine(basePath, "move.wav");
+                if (File.Exists(movePath))
                 {
-                    using SoundPlayer player = new SoundPlayer(path);
-                    player.Play();
+                    _movePlayer = new SoundPlayer(movePath);
+                    _movePlayer.Load();
+                }
+
+                string capturePath = Path.Combine(basePath, "capture.wav");
+                if (File.Exists(capturePath))
+                {
+                    _capturePlayer = new SoundPlayer(capturePath);
+                    _capturePlayer.Load();
                 }
             }
             catch
@@ -26,20 +36,27 @@ namespace CoTuongOnline.Client
             }
         }
 
+        public static void PlayMove()
+        {
+            try
+            {
+                _movePlayer?.Play();
+            }
+            catch
+            {
+                // Bỏ qua lỗi âm thanh
+            }
+        }
+
         public static void PlayCapture()
         {
             try
             {
-                string path = Path.Combine(basePath, "capture.wav");
-                if (File.Exists(path))
-                {
-                    using SoundPlayer player = new SoundPlayer(path);
-                    player.Play();
-                }
+                _capturePlayer?.Play();
             }
             catch
             {
-                // Bỏ qua lỗi âm thanh để không làm crash game
+                // Bỏ qua lỗi âm thanh
             }
         }
     }
