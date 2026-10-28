@@ -12,7 +12,7 @@ namespace CoTuongOnline.Client
     /// </summary>
     public class PacketParser
     {
-        private const int HEADER_SIZE = 5;
+        private const int HEADER_SIZE = Protocol.HEADER_SIZE;
         private readonly List<byte> _buffer = new List<byte>();
 
         /// <summary>
@@ -28,8 +28,11 @@ namespace CoTuongOnline.Client
         {
             if (chunk == null || chunk.Length == 0) return;
 
-            _buffer.AddRange(chunk);
-            ProcessBuffer();
+            lock (_buffer)
+            {
+                _buffer.AddRange(chunk);
+                ProcessBuffer();
+            }
         }
 
         /// <summary>
@@ -39,13 +42,13 @@ namespace CoTuongOnline.Client
         {
             while (_buffer.Count >= HEADER_SIZE)
             {
-                // Đọc header để biết độ dài payload
+                // Đọc header để biết độ dài payload theo chuẩn Network Byte Order
                 byte[] headerBytes = _buffer.GetRange(0, HEADER_SIZE).ToArray();
                 PacketType type = (PacketType)headerBytes[0];
-                int length = BitConverter.ToInt32(headerBytes, 1);
+                int length = Protocol.ReadPayloadLength(headerBytes);
 
-                // Kiểm tra độ dài hợp lệ
-                if (length < 0 || length > 65536)
+                // Kiểm tra packet type và độ dài hợp lệ
+                if (!Enum.IsDefined(typeof(PacketType), type) || length < 0 || length > 65536)
                 {
                     // Packet lỗi, xóa 1 byte và thử lại
                     _buffer.RemoveAt(0);
@@ -72,74 +75,14 @@ namespace CoTuongOnline.Client
         }
 
         /// <summary>
-        /// Parse dữ liệu nước đi từ chuỗi "x1,y1,x2,y2".
-        /// Trả về (fromRow, fromCol, toRow, toCol) hoặc null nếu lỗi.
-        /// </summary>
-        public static (int fromRow, int fromCol, int toRow, int toCol)? ParseMove(string data)
-        {
-            if (string.IsNullOrEmpty(data)) return null;
-
-            string[] parts = data.Split(',');
-            if (parts.Length != 4) return null;
-
-            if (int.TryParse(parts[0], out int x1) &&
-                int.TryParse(parts[1], out int y1) &&
-                int.TryParse(parts[2], out int x2) &&
-                int.TryParse(parts[3], out int y2))
-            {
-                return (x1, y1, x2, y2);
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Parse dữ liệu GameStart: "RED|OpponentName" hoặc "BLACK|OpponentName".
-        /// </summary>
-        public static bool ParseGameStart(string data, out bool isRed, out string opponentName)
-        {
-            isRed = false;
-            opponentName = "Đối thủ";
-            if (string.IsNullOrEmpty(data)) return false;
-
-            string[] parts = data.Split('|');
-            string color = parts[0].Trim().ToUpper();
-
-            if (color == "START" && parts.Length > 1)
-            {
-                color = parts[1].Trim().ToUpper();
-                if (parts.Length > 2) opponentName = parts[2].Trim();
-            }
-            else if (parts.Length > 1)
-            {
-                opponentName = parts[1].Trim();
-            }
-
-            if (color == "RED")
-            {
-                isRed = true;
-                return true;
-            }
-            else if (color == "BLACK")
-            {
-                isRed = false;
-                return true;
-            }
-
-            return false;
-        }
-
-        public static bool ParseGameStart(string data, out bool isRed)
-        {
-            return ParseGameStart(data, out isRed, out _);
-        }
-
-        /// <summary>
         /// Xóa buffer (dùng khi disconnect/reconnect).
         /// </summary>
         public void Reset()
         {
-            _buffer.Clear();
+            lock (_buffer)
+            {
+                _buffer.Clear();
+            }
         }
     }
 }
