@@ -29,25 +29,27 @@ namespace CoTuongOnline.Client
 
         private void InitializeComponent()
         {
-            _rtbMessages = new RichTextBox
-            {
-                Dock = DockStyle.Top,
-                Height = 180,
-                ReadOnly = true,
-                BackColor = Color.White,
-                Font = new Font("Segoe UI", 9F)
-            };
-
             Panel pnlBottom = new Panel
             {
                 Dock = DockStyle.Bottom,
-                Height = 35
+                Height = 32
             };
+
+            _btnSend = new Button
+            {
+                Text = "Gửi",
+                Dock = DockStyle.Right,
+                Width = 48,
+                BackColor = Color.SteelBlue,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 8.5F, FontStyle.Bold)
+            };
+            _btnSend.Click += (s, e) => SendMessage();
 
             _txtInput = new TextBox
             {
-                Location = new Point(0, 5),
-                Width = 105,
+                Dock = DockStyle.Fill,
                 Font = new Font("Segoe UI", 9F)
             };
             _txtInput.KeyDown += (s, e) =>
@@ -59,19 +61,16 @@ namespace CoTuongOnline.Client
                 }
             };
 
-            _btnSend = new Button
-            {
-                Text = "Gửi",
-                Location = new Point(110, 3),
-                Size = new Size(50, 28),
-                BackColor = Color.SteelBlue,
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
-            };
-            _btnSend.Click += (s, e) => SendMessage();
-
             pnlBottom.Controls.Add(_txtInput);
             pnlBottom.Controls.Add(_btnSend);
+
+            _rtbMessages = new RichTextBox
+            {
+                Dock = DockStyle.Fill,
+                ReadOnly = true,
+                BackColor = Color.White,
+                Font = new Font("Segoe UI", 9F)
+            };
 
             this.Controls.Add(_rtbMessages);
             this.Controls.Add(pnlBottom);
@@ -99,6 +98,8 @@ namespace CoTuongOnline.Client
 
         public void AppendLog(string message, Color color)
         {
+            if (this.IsDisposed || !this.IsHandleCreated) return;
+
             if (this.InvokeRequired)
             {
                 this.Invoke((Action)(() => AppendLog(message, color)));
