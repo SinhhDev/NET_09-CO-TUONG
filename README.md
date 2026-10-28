@@ -127,8 +127,10 @@ dotnet run --project Code/client/client.csproj
 #### Bước 4: Khởi động Client 2 (Người chơi 2)
 Mở một cửa sổ Terminal thứ ba và chạy:
 ```powershell
-dotnet run --project Code/client/client.csproj
+dotnet run --project Code/client/client.csproj --no-build
 ```
+> **Lưu ý:** Thêm cờ `--no-build` để không bị xung đột khóa file (`file locked`) khi Client 1 đang chạy. Bạn cũng có thể mở thêm Client bằng cách nhấp đúp file `client.exe` tại thư mục `Code/client/bin/Debug/net10.0-windows/`.
+
 - Nhấn chọn **"Chơi Online"**.
 - Nhập IP Server (`127.0.0.1`) và nhập Tên người chơi (ví dụ: `KyThu_Den`).
 - Nhấn **"Vào Trận"** ➔ Ngay lập tức Server ghép cặp 2 người chơi vào một phòng:
