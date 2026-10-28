@@ -67,11 +67,6 @@ namespace CoTuongOnline.Client
             ThrowIfDisposed();
             if (_stream == null)
                 throw new InvalidOperationException("Chưa kết nối máy chủ. Hãy gọi ConnectAsync trước.");
-<<<<<<< Updated upstream
-
-            lock (_gate)using System;
-=======
->>>>>>> Stashed changes
 
             {
                 if (_receiveCts != null)
