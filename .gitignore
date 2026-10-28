@@ -1,24 +1,81 @@
-# 1. Thư mục cấu hình IDE
-.vs/
-.vscode/
-
-# 2. Thư mục và file tạm khi Build C#
+# 1. Thư mục và file tạm khi Build (.NET / C#)
 [Bb]in/
 [Oo]bj/
 [Dd]ebug/
 [Rr]elease/
+[Xx]64/
+[Xx]86/
+[Bb]uild/
+publish/
+*.exe
+*.dll
+*.pdb
+*.ilk
+*.exp
+*.lib
+*.obj
+*.idb
+*.manifest
+*.tlog
+
+# 2. Dependency Cache & Package Managers
+packages/
 *.nuget.*
 project.assets.json
 project.nuget.cache
+*.nuget.props
+*.nuget.targets
+.dotnet/
+nuget.config
 
-# 3. File cá nhân
+# 3. Secret, Private Key, Chứng chỉ & Password (Bảo mật tuyệt đối)
+*.env
+*.env.*
+*.key
+*.pem
+*.pfx
+*.p12
+*.pkcs12
+*.cer
+*.crt
+*.der
+id_rsa
+id_rsa.pub
+id_ecdsa
+id_ed25519
+secrets.json
+appsettings.secrets.json
+appsettings.Production.json
+*.credentials
+*.password
+*.kdbx
+
+# 4. Thư mục và cấu hình IDE / Editor
+.vs/
+.vscode/
+.idea/
 *.user
 *.suo
-*.pdb
+*.userosscache
+*.sln.docstates
+*.swp
+*.swo
 
-# 4. File Log của Server
+# 5. File Log & Runtime Traces
 *.log
 **/server_log.txt
+server_log.txt
+*.trace
 
-# 5. File tạm khi đang mở Word, Excel, PowerPoint
+# 6. File tạm Office (Word, PowerPoint, Excel) khi đang mở
 ~$*
+~*
+*.tmp
+
+# 7. Hệ điều hành (Windows / macOS / Linux)
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+.Spotlight-V100
+.Trashes
