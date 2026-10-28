@@ -8,14 +8,10 @@
 		<EnableWindowsTargeting>true</EnableWindowsTargeting>
 	</PropertyGroup>
 	<ItemGroup>
-		<Compile Include="..\common\Protocol.cs" />
-		<Compile Include="..\common\Board.cs" />
-		<Compile Include="..\common\Piece.cs" />
-		<Compile Include="..\common\GameTimer.cs" />
-		<Compile Include="..\common\MoveValidator.cs" />
-		<Compile Include="..\common\ChessRules.cs" />
+		<ProjectReference Include="..\common\common.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 		<None Update="Sounds\*.wav" CopyToOutputDirectory="PreserveNewest" />
+		<None Include="..\..\Extra\images\*.png" Link="Extra\images\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
 </Project>
