@@ -14,10 +14,13 @@ namespace CoTuongOnline.Client
         public event Action<string>? OnChatReceived;
         public event Action? OnOpponentSurrender;
         public event Action? OnOpponentTimeout;
+        public event Action? OnDrawOfferReceived;
+        public event Action<bool>? OnDrawResponseReceived;
         public event Action<string>? OnGameEnd;
         public event Action<Exception>? OnConnectionError;
         public event Action<string>? OnLoginOK;
         public event Action<string>? OnLoginFail;
+        public event Action<string>? StateChanged;
 
         public ClientEventListener()
         {
@@ -29,10 +32,18 @@ namespace CoTuongOnline.Client
             _packetParser.OnPacketParsed += HandlePacket;
         }
 
-        public async Task ConnectAsync(string host, int port)
+        public async Task ConnectAsync(string host, int port, string? username = null)
         {
+            StateChanged?.Invoke($"Đang kết nối đến {host}:{port}...");
             await _socketClient.ConnectAsync(host, port);
             _socketClient.StartReceiveLoop();
+            StateChanged?.Invoke("Kết nối mạng thành công!");
+
+            if (!string.IsNullOrWhiteSpace(username))
+            {
+                StateChanged?.Invoke($"Đang đăng nhập với tên '{username}'...");
+                await SendLoginAsync(username);
+            }
         }
 
         private void HandlePacket(PacketType type, string data)
@@ -48,12 +59,12 @@ namespace CoTuongOnline.Client
                     break;
 
                 case PacketType.GameStart:
-                    if (PacketParser.ParseGameStart(data, out bool isRed, out string opponentName))
+                    if (Protocol.ParseGameStart(data, out bool isRed, out string opponentName))
                         OnGameStart?.Invoke(isRed, opponentName);
                     break;
 
                 case PacketType.Move:
-                    var move = PacketParser.ParseMove(data);
+                    var move = Protocol.ParseMove(data);
                     if (move.HasValue)
                         OnOpponentMove?.Invoke(move.Value.fromRow, move.Value.fromCol, move.Value.toRow, move.Value.toCol);
                     break;
@@ -68,6 +79,14 @@ namespace CoTuongOnline.Client
 
                 case PacketType.Timeout:
                     OnOpponentTimeout?.Invoke();
+                    break;
+
+                case PacketType.DrawOffer:
+                    OnDrawOfferReceived?.Invoke();
+                    break;
+
+                case PacketType.DrawResponse:
+                    OnDrawResponseReceived?.Invoke(string.Equals(data, "ACCEPT", StringComparison.OrdinalIgnoreCase));
                     break;
 
                 case PacketType.GameEnd:
@@ -106,9 +125,28 @@ namespace CoTuongOnline.Client
             return _socketClient.SendAsync(packet);
         }
 
+        public Task SendDrawOfferAsync()
+        {
+            byte[] packet = Protocol.CreateDrawOffer();
+            return _socketClient.SendAsync(packet);
+        }
+
+        public Task SendDrawResponseAsync(bool accept)
+        {
+            byte[] packet = Protocol.CreateDrawResponse(accept);
+            return _socketClient.SendAsync(packet);
+        }
+
+        public Task SendGameEndAsync(string reason)
+        {
+            byte[] packet = Protocol.CreateGameEnd(reason);
+            return _socketClient.SendAsync(packet);
+        }
+
         public void Dispose()
         {
             _socketClient.Dispose();
         }
     }
 }
+
