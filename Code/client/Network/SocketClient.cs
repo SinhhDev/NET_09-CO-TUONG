@@ -1,4 +1,4 @@
-using System;
+using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,45 +6,46 @@ using System.Threading.Tasks;
 namespace CoTuongOnline.Client
 {
     /// <summary>
-    /// Client networking layer (bàn giao cho phần "Client Network").
-    /// Trách nhiệm chính:
-    /// - Kết nối tới server bằng TcpClient.
-    /// - Nhận dữ liệu dạng byte[] theo luồng.
-    /// - Cung cấp event để phần UI / game logic xử lý dữ liệu (ví dụ test "bit"/"voice").
+    /// Lớp kết nối mạng tầng Socket của Client.
+    /// Quản lý kết nối TCP, vòng nhận dữ liệu và gửi dữ liệu thread-safe.
     /// </summary>
     public sealed class SocketClient : IDisposable
     {
-        private readonly TcpClient _tcpClient = new TcpClient();
-        private NetworkStreamWrapper? _stream;
+        private TcpClient? _tcpClient;
+        private NetworkStream? _stream;
         private CancellationTokenSource? _receiveCts;
+        private readonly SemaphoreSlim _sendLock = new SemaphoreSlim(1, 1);
         private readonly object _gate = new object();
         private bool _disposed;
 
         /// <summary>
-        /// Được gọi mỗi khi có dữ liệu mới nhận được từ server.
-        /// Lưu ý: byte[] này là "chunk" theo mức độ đọc từ NetworkStream,
-        /// không đảm bảo ranh giới theo message nếu chưa có framing/protocol.
+        /// Được gọi mỗi khi có chunk dữ liệu mới từ Server.
         /// </summary>
         public event Action<byte[]>? DataReceived;
         public event Action<Exception>? ConnectionError;
 
-
         /// <summary>
-        /// Kết nối tới server.
+        /// Kết nối tới máy chủ TCP.
         /// </summary>
         public async Task ConnectAsync(string serverIp, int serverPort, CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(serverIp))
-                throw new ArgumentException("serverIp is required.", nameof(serverIp));
+                throw new ArgumentException("Địa chỉ IP không được để trống.", nameof(serverIp));
             if (serverPort <= 0 || serverPort > 65535)
-                throw new ArgumentOutOfRangeException(nameof(serverPort));
+                throw new ArgumentOutOfRangeException(nameof(serverPort), "Cổng mạng không hợp lệ.");
 
             ThrowIfDisposed();
-
             ct.ThrowIfCancellationRequested();
 
-            // TcpClient.ConnectAsync(string,int) không có overload cancellation token ở một số phiên bản.
-            // Ta dùng WhenAny + Task.Delay để hủy kết nối theo ct.
+            lock (_gate)
+            {
+                // Đóng kết nối cũ nếu có trước khi mở kết nối mới
+                try { _stream?.Dispose(); } catch { }
+                try { _tcpClient?.Close(); } catch { }
+
+                _tcpClient = new TcpClient();
+            }
+
             var connectTask = _tcpClient.ConnectAsync(serverIp, serverPort);
             if (ct != default)
             {
@@ -54,22 +55,23 @@ namespace CoTuongOnline.Client
             }
 
             await connectTask.ConfigureAwait(false);
-            _stream = new NetworkStreamWrapper(_tcpClient.GetStream());
+            _stream = _tcpClient.GetStream();
         }
 
         /// <summary>
-        /// Bắt đầu vòng lắng nghe dữ liệu từ server.
+        /// Bắt đầu vòng lặp đọc dữ liệu từ server.
         /// </summary>
         public void StartReceiveLoop(CancellationToken ct = default)
         {
             ThrowIfDisposed();
             if (_stream == null)
-                throw new InvalidOperationException("Not connected. Call ConnectAsync first.");
+                throw new InvalidOperationException("Chưa kết nối máy chủ. Hãy gọi ConnectAsync trước.");
 
-            lock (_gate)
+            lock (_gate)using System;
+
             {
                 if (_receiveCts != null)
-                    throw new InvalidOperationException("Receive loop already started.");
+                    throw new InvalidOperationException("Receive loop đã đang chạy.");
 
                 _receiveCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             }
@@ -78,31 +80,53 @@ namespace CoTuongOnline.Client
         }
 
         /// <summary>
-        /// Gửi dữ liệu thô tới server.
-        /// (Protocol framing nếu cần thì phía game logic sẽ tự đóng gói.)
+        /// Gửi dữ liệu thô tới máy chủ, đảm bảo thread-safe với SemaphoreSlim.
         /// </summary>
         public async Task SendAsync(byte[] payload, CancellationToken ct = default)
         {
             if (payload == null) throw new ArgumentNullException(nameof(payload));
             ThrowIfDisposed();
-            if (_stream == null)
-                throw new InvalidOperationException("Not connected. Call ConnectAsync first.");
+
+            NetworkStream? stream;
+            lock (_gate)
+            {
+                stream = _stream;
+            }
+
+            if (stream == null)
+                throw new InvalidOperationException("Chưa kết nối máy chủ.");
 
             ct.ThrowIfCancellationRequested();
-            await _stream.WriteAsync(payload, ct).ConfigureAwait(false);
+
+            await _sendLock.WaitAsync(ct).ConfigureAwait(false);
+            try
+            {
+                await stream.WriteAsync(payload, ct).ConfigureAwait(false);
+                await stream.FlushAsync(ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                _sendLock.Release();
+            }
         }
 
         private async Task ReceiveLoopAsync(CancellationToken ct)
         {
-            if (_stream == null) return;
+            NetworkStream? stream;
+            lock (_gate)
+            {
+                stream = _stream;
+            }
+
+            if (stream == null) return;
 
             var buffer = new byte[8192];
-            while (!ct.IsCancellationRequested)
+            while (!ct.IsCancellationRequested && !_disposed)
             {
                 int read;
                 try
                 {
-                    read = await _stream.ReadAsync(buffer, 0, buffer.Length, ct).ConfigureAwait(false);
+                    read = await stream.ReadAsync(buffer, 0, buffer.Length, ct).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -110,27 +134,33 @@ namespace CoTuongOnline.Client
                 }
                 catch (Exception ex)
                 {
-                    // Có thể do server đóng kết nối hoặc lỗi mạng.
-                    ConnectionError?.Invoke(ex);
+                    if (!_disposed && !ct.IsCancellationRequested)
+                    {
+                        ConnectionError?.Invoke(ex);
+                    }
                     break;
                 }
 
-                if (read <= 0) break;
+                if (read <= 0)
+                {
+                    if (!_disposed && !ct.IsCancellationRequested)
+                    {
+                        ConnectionError?.Invoke(new IOException("Máy chủ đã đóng kết nối."));
+                    }
+                    break;
+                }
 
                 var chunk = new byte[read];
                 Buffer.BlockCopy(buffer, 0, chunk, 0, read);
+
                 try
                 {
                     DataReceived?.Invoke(chunk);
                 }
                 catch
                 {
-                    // Callback lỗi không được làm sập vòng lắng nghe.
+                    // Tránh exception trong event listener làm sập vòng lặp đọc
                 }
-
-                // TODO (phối hợp test): nếu server có framing/protocol riêng
-                // để tách "bit" và "voice" thành message thì client logic ở nơi gọi event
-                // sẽ parse chunk theo đúng protocol đó.
             }
         }
 
@@ -151,38 +181,17 @@ namespace CoTuongOnline.Client
                 try { _stream?.Dispose(); } catch { }
                 _stream = null;
 
-                try { _tcpClient.Close(); } catch { }
+                try { _tcpClient?.Close(); } catch { }
+                _tcpClient = null;
             }
+
+            _sendLock.Dispose();
         }
 
         private void ThrowIfDisposed()
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(SocketClient));
-        }
-
-        /// <summary>
-        /// Wrapper để không phải đưa using NetworkStream vào file (giữ gọn và dễ thay đổi).
-        /// </summary>
-        private sealed class NetworkStreamWrapper : IDisposable
-        {
-            private readonly System.IO.Stream _stream;
-
-            public NetworkStreamWrapper(System.IO.Stream stream)
-            {
-                _stream = stream ?? throw new ArgumentNullException(nameof(stream));
-            }
-
-            public Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken ct)
-                => _stream.ReadAsync(buffer, offset, count, ct);
-
-            public Task WriteAsync(byte[] buffer, CancellationToken ct)
-                => _stream.WriteAsync(buffer, 0, buffer.Length, ct);
-
-            public void Dispose()
-            {
-                try { _stream.Dispose(); } catch { }
-            }
         }
     }
 }
