@@ -13,6 +13,28 @@ namespace CoTuongOnline.Client
         static SoundManager()
         {
             string basePath = Path.Combine(Application.StartupPath, "Sounds");
+            if (!Directory.Exists(basePath))
+            {
+                string currentDir = AppDomain.CurrentDomain.BaseDirectory;
+                for (int i = 0; i < 5; i++)
+                {
+                    string testPath = Path.Combine(currentDir, "Sounds");
+                    if (Directory.Exists(testPath))
+                    {
+                        basePath = testPath;
+                        break;
+                    }
+                    string testPath2 = Path.Combine(currentDir, "Code", "client", "Sounds");
+                    if (Directory.Exists(testPath2))
+                    {
+                        basePath = testPath2;
+                        break;
+                    }
+                    var parent = Directory.GetParent(currentDir);
+                    if (parent == null) break;
+                    currentDir = parent.FullName;
+                }
+            }
 
             try
             {

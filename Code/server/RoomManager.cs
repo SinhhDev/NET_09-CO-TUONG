@@ -121,7 +121,7 @@ namespace ChessServer
                     string name = UserManager.Instance.GetUser(client)?.Username ?? "Người chơi";
                     Logger.WriteLog($"[ROOM] Người chơi '{name}' đang chờ đối thủ...");
 
-                    SendBytes(client, Protocol.CreateChat("Đang chờ đối thủ..."));
+                    SendBytes(client, Protocol.CreateChat("[Hệ thống] Đang chờ đối thủ..."));
                 }
                 else
                 {
