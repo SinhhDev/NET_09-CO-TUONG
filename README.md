@@ -209,8 +209,8 @@ NET_09-CO-TUONG/
 │   └── Bao_cao.docx                    # File báo cáo
 ├── Extra/                              # Tài nguyên bổ sung
 │   ├── images/                         # Bộ hình ảnh đồ họa 32 quân cờ tướng
-│   ├── tasks/                          # Bảng phân công nhiệm vụ
-│   └── TC/                             # Bảng kiểm thử (Test Cases.xlsx)
+│   ├── tasks.txt                       # Link bảng Phân công nhiệm vụ
+│   └── testcases.txt                   # Link bảng Testcases
 ├── PPTX/                               
 │   └── Thuyet_trinh.pptx               # File trình chiếu 
 ├── .gitignore                          # Cấu hình loại bỏ file build, cache, secret
