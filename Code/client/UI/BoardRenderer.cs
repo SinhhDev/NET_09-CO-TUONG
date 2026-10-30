@@ -155,11 +155,15 @@ namespace CoTuongOnline.Client
         /// </summary>
         public static void DrawPiece(Graphics g, Image img, int startX, int startY, int cell, int screenCol, int screenRow)
         {
-            int size = cell - 6;
+            int size = GetPieceSize(cell);
             int cx = startX + screenCol * cell;
             int cy = startY + screenRow * cell;
             g.DrawImage(img, cx - size / 2, cy - size / 2, size, size);
         }
+
+        public static int GetPieceSize(int cell) => cell - 6;
+        public static int GetPieceCircleSize(int cell) => cell - 16;
+        public static int GetPieceVisualCenterOffsetY(int cell) => (int)Math.Round(-cell / 30f);
 
         /// <summary>
         /// Tô viền/dấu nhận diện nước đi vừa đi (from -> to)
@@ -174,8 +178,10 @@ namespace CoTuongOnline.Client
             if (isDestination)
             {
                 // 1. Vầng sáng nhẹ phía sau quân cờ đích đến
-                int r = (cell - 4) / 2;
-                g.FillEllipse(LastMoveBrush, cx - r, cy - r, r * 2, r * 2);
+                int circleSize = GetPieceCircleSize(cell);
+                int circleX = cx - circleSize / 2;
+                int circleY = cy + GetPieceVisualCenterOffsetY(cell) - circleSize / 2;
+                g.FillEllipse(LastMoveBrush, circleX, circleY, circleSize, circleSize);
 
                 // 2. Khung 4 góc vuông bo ôm quân cờ
                 DrawCornerBrackets(g, LastMovePen, cx, cy, cell - 2, 10);

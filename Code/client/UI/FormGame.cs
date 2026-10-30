@@ -148,10 +148,12 @@ namespace CoTuongOnline.Client
                     int sc = ToScreenCol(genPos.Value.X);
                     int sr = ToScreenRow(genPos.Value.Y);
                     int cx = StartX + sc * Cell;
-                    int cy = StartY + sr * Cell;
-                    int r = (Cell - 4) / 2;
-                    g.FillEllipse(_checkBgBrush, cx - r, cy - r, r * 2, r * 2);
-                    g.DrawEllipse(_checkBorderPen, cx - r, cy - r, r * 2, r * 2);
+                    int cy = StartY + sr * Cell + BoardRenderer.GetPieceVisualCenterOffsetY(Cell);
+                    int size = BoardRenderer.GetPieceCircleSize(Cell);
+                    int left = cx - size / 2;
+                    int top = cy - size / 2;
+                    g.FillEllipse(_checkBgBrush, left, top, size, size);
+                    g.DrawEllipse(_checkBorderPen, left, top, size, size);
                 }
             }
 
@@ -160,10 +162,12 @@ namespace CoTuongOnline.Client
                 int sc = ToScreenCol(_selectedCell.Value.X);
                 int sr = ToScreenRow(_selectedCell.Value.Y);
                 int cx = StartX + sc * Cell;
-                int cy = StartY + sr * Cell;
-                int r = (Cell - 4) / 2;
-                g.FillEllipse(_selBrush, cx - r, cy - r, r * 2, r * 2);
-                g.DrawEllipse(_selPen, cx - r, cy - r, r * 2, r * 2);
+                int cy = StartY + sr * Cell + BoardRenderer.GetPieceVisualCenterOffsetY(Cell);
+                int size = BoardRenderer.GetPieceCircleSize(Cell);
+                int left = cx - size / 2;
+                int top = cy - size / 2;
+                g.FillEllipse(_selBrush, left, top, size, size);
+                g.DrawEllipse(_selPen, left, top, size, size);
             }
 
             // Nước đi hợp lệ: chấm màu xanh lá
@@ -221,8 +225,9 @@ namespace CoTuongOnline.Client
                 if (genPos.HasValue)
                 {
                     int cx = StartX + ToScreenCol(genPos.Value.X) * Cell;
-                    int cy = StartY + ToScreenRow(genPos.Value.Y) * Cell;
-                    g.DrawEllipse(_generalCirclePen, cx - 26, cy - 26, 52, 52);
+                    int cy = StartY + ToScreenRow(genPos.Value.Y) * Cell + BoardRenderer.GetPieceVisualCenterOffsetY(Cell);
+                    int size = BoardRenderer.GetPieceCircleSize(Cell);
+                    g.DrawEllipse(_generalCirclePen, cx - size / 2, cy - size / 2, size, size);
                 }
             }
 
@@ -231,8 +236,9 @@ namespace CoTuongOnline.Client
             {
                 if (_board.grid[p.Y, p.X] == null) continue;
                 int cx = StartX + ToScreenCol(p.X) * Cell;
-                int cy = StartY + ToScreenRow(p.Y) * Cell;
-                g.DrawEllipse(_ringPen, cx - 23, cy - 23, 46, 46);
+                int cy = StartY + ToScreenRow(p.Y) * Cell + BoardRenderer.GetPieceVisualCenterOffsetY(Cell);
+                int size = BoardRenderer.GetPieceCircleSize(Cell);
+                g.DrawEllipse(_ringPen, cx - size / 2, cy - size / 2, size, size);
             }
 
             // Nước ăn quân nhưng bị chặn: vẽ vòng tròn và dấu chéo
@@ -240,8 +246,9 @@ namespace CoTuongOnline.Client
             {
                 if (_board.grid[p.Y, p.X] == null) continue;
                 int cx = StartX + ToScreenCol(p.X) * Cell;
-                int cy = StartY + ToScreenRow(p.Y) * Cell;
-                g.DrawEllipse(_blockedRingPen, cx - 23, cy - 23, 46, 46);
+                int cy = StartY + ToScreenRow(p.Y) * Cell + BoardRenderer.GetPieceVisualCenterOffsetY(Cell);
+                int size = BoardRenderer.GetPieceCircleSize(Cell);
+                g.DrawEllipse(_blockedRingPen, cx - size / 2, cy - size / 2, size, size);
                 g.DrawLine(_blockedCrossPen, cx - 10, cy - 10, cx + 10, cy + 10);
                 g.DrawLine(_blockedCrossPen, cx - 10, cy + 10, cx + 10, cy - 10);
             }
