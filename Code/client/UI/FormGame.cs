@@ -63,6 +63,7 @@ namespace CoTuongOnline.Client
         private ClientEventListener? _clientListener;
         private bool _isOnline = false;
         private bool _isPlayerRed = true;
+        private bool _confirmedReturnToMenu = false;
         private string _myUsername = "Tôi";
         private readonly bool _autoConnectOnline;
         private string _lastServerIp = "127.0.0.1";
@@ -699,7 +700,16 @@ namespace CoTuongOnline.Client
 
         private void btnThoat_Click(object? sender, EventArgs e)
         {
-            Application.Exit();
+            string message = _isOnline
+                ? "Bạn có muốn quay về menu chính không? Thoát lúc này sẽ bị xử thua."
+                : "Bạn có muốn quay về menu chính không?";
+            var confirm = MessageBox.Show(this, message, "Xác nhận quay về menu",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+            if (confirm != DialogResult.Yes) return;
+
+            _confirmedReturnToMenu = true;
+            this.Close();
         }
 
         private async void btnXinHoa_Click(object? sender, EventArgs e)
@@ -1160,14 +1170,27 @@ namespace CoTuongOnline.Client
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            if (_isOnline && _clientListener != null)
+            if (_isOnline && e.CloseReason != CloseReason.WindowsShutDown)
             {
-                try
+                if (!_confirmedReturnToMenu)
                 {
-                    _ = _clientListener.SendSurrenderAsync();
+                    var confirm = MessageBox.Show(this,
+                        "Bạn đang trong ván đấu online. Thoát bây giờ sẽ bị xử THUA.\nBạn có chắc muốn thoát?",
+                        "Xác nhận thoát", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+                    if (confirm != DialogResult.Yes)
+                    {
+                        e.Cancel = true;
+                        return;
+                    }
                 }
-                catch { }
+
+                if (_clientListener != null)
+                {
+                    try { _ = _clientListener.SendSurrenderAsync(); } catch { }
+                }
             }
+
             _gameTimer?.StopAll();
             base.OnFormClosing(e);
         }

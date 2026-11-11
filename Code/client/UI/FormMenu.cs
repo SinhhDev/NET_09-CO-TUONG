@@ -60,7 +60,11 @@ namespace CoTuongOnline.Client
             btnOffline.Click += (s, e) =>
             {
                 FormGame game = new FormGame(autoConnectOnline: false);
-                game.FormClosed += (sender, args) => this.Close();
+                game.FormClosed += (sender, args) =>
+                {
+                    this.Show();
+                    this.Activate();
+                };
                 game.Show();
                 this.Hide();
             };
@@ -68,7 +72,11 @@ namespace CoTuongOnline.Client
             btnOnline.Click += (s, e) =>
             {
                 FormGame game = new FormGame(autoConnectOnline: true);
-                game.FormClosed += (sender, args) => this.Close();
+                game.FormClosed += (sender, args) =>
+                {
+                    this.Show();
+                    this.Activate();
+                };
                 game.Show();
                 this.Hide();
             };
